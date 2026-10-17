@@ -78,12 +78,3 @@ The frontend Vite server runs at `http://localhost:5173`.
 
 ---
 
-## 🌐 Environment Variables
-
-### Backend (`server/.env`)
-```env
-PORT=5000
-JWT_SECRET=super-secret-samthar-jwt-token-key-2026-production
-ADMIN_PASSWORD=admin123
-```
-
