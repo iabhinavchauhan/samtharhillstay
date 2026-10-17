@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Vite app",
+			"type": "shell",
+			"command": "npm run dev",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run nested Vite app",
+			"type": "shell",
+			"command": "npm --prefix my-react-app run dev",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
