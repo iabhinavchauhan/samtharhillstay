@@ -1,5 +1,7 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+
+let isMongoConnected = false;
 
 // 1. Admin Schema
 const adminSchema = new mongoose.Schema({
@@ -47,43 +49,255 @@ const contactSubmissionSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now }
 });
 
-const Admin = mongoose.model('Admin', adminSchema);
-const SiteContent = mongoose.model('SiteContent', siteContentSchema);
-const Media = mongoose.model('Media', mediaSchema);
-const Revision = mongoose.model('Revision', revisionSchema);
-const ContactSubmission = mongoose.model('ContactSubmission', contactSubmissionSchema);
+const MongoAdmin = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
+const MongoSiteContent = mongoose.models.SiteContent || mongoose.model('SiteContent', siteContentSchema);
+const MongoMedia = mongoose.models.Media || mongoose.model('Media', mediaSchema);
+const MongoRevision = mongoose.models.Revision || mongoose.model('Revision', revisionSchema);
+const MongoContactSubmission = mongoose.models.ContactSubmission || mongoose.model('ContactSubmission', contactSubmissionSchema);
 
-async function connectDb() {
-  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/samthar_db';
-  await mongoose.connect(uri);
-  console.log('[MongoDB] Connected to database successfully at:', uri);
+// In-Memory Storage & Mock Models for when MongoDB is unavailable
+const memory = {
+  admins: [],
+  siteContent: new Map(),
+  media: [],
+  revisions: [],
+  contactSubmissions: []
+};
 
-  // Initialize Default Admin if not existing
-  const existingAdmin = await Admin.findOne({ username: 'admin' });
-  if (!existingAdmin) {
-    const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-    await Admin.create({
+function wrapQuery(val) {
+  const p = Promise.resolve(val);
+  p.lean = function() {
+    return wrapQuery(val ? JSON.parse(JSON.stringify(val)) : null);
+  };
+  p.select = function(fields) {
+    if (!val) return wrapQuery(val);
+    const filter = (item) => {
+      const copy = { ...item };
+      if (typeof fields === 'string' && fields.includes('-password')) {
+        delete copy.password;
+      }
+      return copy;
+    };
+    const filtered = Array.isArray(val) ? val.map(filter) : filter(val);
+    return wrapQuery(filtered);
+  };
+  p.sort = function(sortObj) {
+    if (!Array.isArray(val) || !sortObj) return wrapQuery(val);
+    const key = Object.keys(sortObj)[0];
+    const dir = sortObj[key] === -1 ? -1 : 1;
+    const sorted = [...val].sort((a, b) => {
+      const vA = new Date(a[key]).getTime() || a[key] || 0;
+      const vB = new Date(b[key]).getTime() || b[key] || 0;
+      return (vA > vB ? 1 : vA < vB ? -1 : 0) * dir;
+    });
+    return wrapQuery(sorted);
+  };
+  p.limit = function(n) {
+    if (!Array.isArray(val)) return wrapQuery(val);
+    return wrapQuery(val.slice(0, n));
+  };
+  return p;
+}
+
+export const Admin = {
+  findOne(query) {
+    if (isMongoConnected) return MongoAdmin.findOne(query);
+    const found = memory.admins.find(a => (query.username ? a.username.toLowerCase() === query.username.toLowerCase() : true));
+    return wrapQuery(found ? { ...found } : null);
+  },
+  findById(id) {
+    if (isMongoConnected) return MongoAdmin.findById(id);
+    const found = memory.admins.find(a => a._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  find(query) {
+    if (isMongoConnected) return MongoAdmin.find(query);
+    return wrapQuery(memory.admins.map(a => ({ ...a })));
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoAdmin.create(data);
+    const doc = {
+      _id: 'admin_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      ...data,
+      created_at: new Date()
+    };
+    memory.admins.push(doc);
+    return doc;
+  },
+  async findByIdAndDelete(id) {
+    if (isMongoConnected) return MongoAdmin.findByIdAndDelete(id);
+    const idx = memory.admins.findIndex(a => a._id?.toString() === id?.toString());
+    if (idx !== -1) memory.admins.splice(idx, 1);
+    return { success: true };
+  }
+};
+
+export const SiteContent = {
+  findOne(query) {
+    if (isMongoConnected) return MongoSiteContent.findOne(query);
+    const doc = memory.siteContent.get(query.id);
+    return wrapQuery(doc ? { ...doc } : null);
+  },
+  async findOneAndUpdate(query, update, options) {
+    if (isMongoConnected) return MongoSiteContent.findOneAndUpdate(query, update, options);
+    let doc = memory.siteContent.get(query.id);
+    if (!doc) {
+      doc = { id: query.id, _id: 'content_' + query.id };
+    }
+    if (update.data) doc.data = JSON.parse(JSON.stringify(update.data));
+    if (update.updated_at) doc.updated_at = update.updated_at;
+    if (update.updated_by) doc.updated_by = update.updated_by;
+    memory.siteContent.set(query.id, doc);
+    return doc;
+  }
+};
+
+export const Media = {
+  find(query) {
+    if (isMongoConnected) return MongoMedia.find(query);
+    return wrapQuery(memory.media.map(m => ({ ...m })));
+  },
+  findById(id) {
+    if (isMongoConnected) return MongoMedia.findById(id);
+    const found = memory.media.find(m => m._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoMedia.create(data);
+    const doc = {
+      _id: 'media_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      ...data,
+      created_at: new Date()
+    };
+    memory.media.unshift(doc);
+    return doc;
+  },
+  async findByIdAndDelete(id) {
+    if (isMongoConnected) return MongoMedia.findByIdAndDelete(id);
+    const idx = memory.media.findIndex(m => m._id?.toString() === id?.toString());
+    if (idx !== -1) memory.media.splice(idx, 1);
+    return { success: true };
+  }
+};
+
+export const Revision = {
+  find(query) {
+    if (isMongoConnected) return MongoRevision.find(query);
+    return wrapQuery(memory.revisions.map(r => ({ ...r })));
+  },
+  findById(id) {
+    if (isMongoConnected) return MongoRevision.findById(id);
+    const found = memory.revisions.find(r => r._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoRevision.create(data);
+    const doc = {
+      _id: 'rev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      ...data,
+      created_at: new Date()
+    };
+    memory.revisions.unshift(doc);
+    return doc;
+  }
+};
+
+export const ContactSubmission = {
+  find(query) {
+    if (isMongoConnected) return MongoContactSubmission.find(query);
+    return wrapQuery(memory.contactSubmissions.map(c => ({ ...c })));
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoContactSubmission.create(data);
+    const doc = {
+      _id: 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      ...data,
+      created_at: new Date()
+    };
+    memory.contactSubmissions.unshift(doc);
+    return doc;
+  }
+};
+
+export async function connectDb() {
+  const uri = process.env.MONGODB_URI;
+  if (uri && uri.trim()) {
+    try {
+      mongoose.set('bufferCommands', false);
+      await mongoose.connect(uri.trim(), { serverSelectionTimeoutMS: 3000 });
+      isMongoConnected = true;
+      console.log('[MongoDB] Connected to database successfully.');
+
+      const existingAdmin = await MongoAdmin.findOne({ username: 'admin' });
+      if (!existingAdmin) {
+        const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+        await MongoAdmin.create({
+          username: 'admin',
+          password: hashedPassword,
+          role: 'admin',
+          name: 'Super Administrator'
+        });
+        console.log('[MongoDB] Created default administrator: admin');
+      }
+
+      const publishedContent = await MongoSiteContent.findOne({ id: 'published' });
+      if (!publishedContent) {
+        const defaultData = getDefaultSiteData();
+        await MongoSiteContent.create({ id: 'published', data: defaultData, updated_by: 'system_init' });
+        await MongoSiteContent.create({ id: 'draft', data: defaultData, updated_by: 'system_init' });
+        await MongoRevision.create({ data: defaultData, note: 'Initial default setup', created_by: 'system_init' });
+        console.log('[MongoDB] Seeded default published, draft and base revision in MongoDB.');
+      }
+      return;
+    } catch (err) {
+      console.warn('[MongoDB] Connection failed, using in-memory store:', err.message);
+      isMongoConnected = false;
+    }
+  }
+
+  console.log('[AI Studio] Initializing resilient in-memory store for Samthar...');
+  const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+  memory.admins = [
+    {
+      _id: 'admin_default',
       username: 'admin',
       password: hashedPassword,
       role: 'admin',
-      name: 'Super Administrator'
-    });
-    console.log('[MongoDB] Created default administrator: admin');
-  }
+      name: 'Super Administrator',
+      created_at: new Date()
+    }
+  ];
 
-  // Initialize Default Content if not existing
-  const publishedContent = await SiteContent.findOne({ id: 'published' });
-  if (!publishedContent) {
-    const defaultData = getDefaultSiteData();
-    await SiteContent.create({ id: 'published', data: defaultData, updated_by: 'system_init' });
-    await SiteContent.create({ id: 'draft', data: defaultData, updated_by: 'system_init' });
-    await Revision.create({ data: defaultData, note: 'Initial default setup', created_by: 'system_init' });
-    console.log('[MongoDB] Seeded default published, draft and base revision in MongoDB.');
-  }
+  const defaultData = getDefaultSiteData();
+  memory.siteContent.set('published', {
+    id: 'published',
+    _id: 'content_published',
+    data: defaultData,
+    updated_by: 'system_init',
+    updated_at: new Date()
+  });
+  memory.siteContent.set('draft', {
+    id: 'draft',
+    _id: 'content_draft',
+    data: defaultData,
+    updated_by: 'system_init',
+    updated_at: new Date()
+  });
+  memory.revisions = [
+    {
+      _id: 'rev_default',
+      data: defaultData,
+      note: 'Initial default setup',
+      created_by: 'system_init',
+      created_at: new Date()
+    }
+  ];
+  console.log('[AI Studio] In-memory store ready. Default admin: admin / ' + defaultPassword);
 }
 
-function getDefaultSiteData() {
+export function getDefaultSiteData() {
   return {
     theme: {
       primaryColor: '#10281e',
@@ -354,13 +568,3 @@ function getDefaultSiteData() {
     ]
   };
 }
-
-module.exports = {
-  connectDb,
-  Admin,
-  SiteContent,
-  Media,
-  Revision,
-  ContactSubmission,
-  getDefaultSiteData
-};

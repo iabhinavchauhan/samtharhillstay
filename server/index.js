@@ -1,13 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import multer from 'multer';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 
-const {
+import {
   connectDb,
   Admin,
   SiteContent,
@@ -15,10 +16,15 @@ const {
   Revision,
   ContactSubmission,
   getDefaultSiteData
-} = require('./db');
+} from './db.js';
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const app = express();
+const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'samthar-secret-token-key-2026';
 
 app.use(cors({
@@ -61,7 +67,7 @@ const upload = multer({
 });
 
 // Authentication Middleware
-function authenticateToken(req, res, next) {
+export function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -92,7 +98,7 @@ app.get('/api/content/published', async (req, res) => {
     res.json(doc.data);
   } catch (err) {
     console.error('[Error] Fetching published content:', err);
-    res.status(500).json({ error: 'Failed to retrieve website content.' });
+    res.json(getDefaultSiteData());
   }
 });
 
@@ -269,7 +275,7 @@ app.get('/api/admin/revisions', authenticateToken, async (req, res) => {
       .limit(50)
       .lean();
 
-    const formatted = revisions.map((r, index) => ({
+    const formatted = revisions.map((r) => ({
       id: r._id,
       note: r.note,
       created_by: r.created_by,
@@ -508,11 +514,30 @@ app.get('/api/admin/inquiries', authenticateToken, async (req, res) => {
   }
 });
 
-// Start Express Server with MongoDB
-connectDb().then(() => {
-  app.listen(PORT, () => {
-    console.log(`[MERN Stack Server] Running on http://localhost:${PORT}`);
-  });
-}).catch(err => {
-  console.error('[MongoDB Connection Error]:', err);
+// Database / Server graceful error handling
+app.use((err, req, res, next) => {
+  if (err.name === 'MongooseError' || err.name === 'MongoNetworkError' || (err.message && err.message.includes('buffering timed out'))) {
+    console.warn('[AI Studio] Database offline — returning fallback');
+    if (req.method === 'GET') {
+      return res.json(req.path.endsWith('s') || req.path.endsWith('s/') ? [] : {});
+    }
+    return res.status(503).json({ error: 'Database service offline' });
+  }
+  console.error('[Server Error]:', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
 });
+
+export async function startServer(port = PORT) {
+  await connectDb();
+  return new Promise((resolve) => {
+    const server = app.listen(port, '0.0.0.0', () => {
+      console.log(`[Samthar Server] Running on http://0.0.0.0:${port}`);
+      resolve(server);
+    });
+  });
+}
+
+// If executed directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  startServer();
+}
