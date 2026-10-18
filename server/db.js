@@ -12,7 +12,18 @@ const adminSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now }
 });
 
-// 2. Site Content Schema (id: 'published' or 'draft')
+// 2. User Schema (Regular Customers)
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, unique: true, required: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  phone: { type: String, default: '' },
+  role: { type: String, default: 'user' },
+  recent_views: { type: [String], default: [] },
+  created_at: { type: Date, default: Date.now }
+});
+
+// 3. Site Content Schema (id: 'published' or 'draft')
 const siteContentSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },
   data: { type: Object, required: true },
@@ -20,7 +31,7 @@ const siteContentSchema = new mongoose.Schema({
   updated_at: { type: Date, default: Date.now }
 });
 
-// 3. Media Schema
+// 4. Media Schema
 const mediaSchema = new mongoose.Schema({
   filename: { type: String, required: true },
   url: { type: String, required: true },
@@ -30,7 +41,7 @@ const mediaSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now }
 });
 
-// 4. Revision History Schema
+// 5. Revision History Schema
 const revisionSchema = new mongoose.Schema({
   data: { type: Object, required: true },
   note: { type: String, default: '' },
@@ -38,7 +49,7 @@ const revisionSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now }
 });
 
-// 5. Contact Inquiries Schema
+// 6. Contact Inquiries Schema
 const contactSubmissionSchema = new mongoose.Schema({
   name: { type: String, default: '' },
   phone: { type: String, default: '' },
@@ -49,15 +60,81 @@ const contactSubmissionSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now }
 });
 
+// 7. Cart Item Schema
+const cartItemSchema = new mongoose.Schema({
+  user_id: { type: String, required: true, index: true },
+  stay_slug: { type: String, required: true },
+  stay_name: { type: String, required: true },
+  room_name: { type: String, required: true },
+  price_per_night: { type: Number, required: true },
+  currency: { type: String, default: 'INR' },
+  check_in: { type: String, required: true },
+  check_out: { type: String, required: true },
+  nights: { type: Number, required: true, default: 1 },
+  guests: { type: Number, required: true, default: 1 },
+  total_price: { type: Number, required: true },
+  image: { type: String, default: '' },
+  created_at: { type: Date, default: Date.now }
+});
+
+// 8. Booking Schema
+const bookingSchema = new mongoose.Schema({
+  booking_ref: { type: String, unique: true, required: true },
+  user_id: { type: String, required: true, index: true },
+  user_name: { type: String, required: true },
+  user_email: { type: String, required: true },
+  user_phone: { type: String, default: '' },
+  stay_slug: { type: String, required: true },
+  stay_name: { type: String, required: true },
+  room_name: { type: String, required: true },
+  image: { type: String, default: '' },
+  check_in: { type: String, required: true },
+  check_out: { type: String, required: true },
+  nights: { type: Number, required: true, default: 1 },
+  guests: { type: Number, required: true, default: 1 },
+  price_per_night: { type: Number, required: true },
+  total_amount: { type: Number, required: true },
+  currency: { type: String, default: 'INR' },
+  status: { type: String, default: 'confirmed' }, // 'confirmed', 'pending', 'cancelled'
+  payment_status: { type: String, default: 'paid' }, // 'paid', 'pending', 'failed'
+  razorpay_order_id: { type: String, default: '' },
+  razorpay_payment_id: { type: String, default: '' },
+  created_at: { type: Date, default: Date.now }
+});
+
+// 9. Payment Schema
+const paymentSchema = new mongoose.Schema({
+  transaction_id: { type: String, unique: true, required: true },
+  booking_ref: { type: String, required: true, index: true },
+  booking_id: { type: String, required: true },
+  user_id: { type: String, required: true, index: true },
+  amount: { type: Number, required: true },
+  currency: { type: String, default: 'INR' },
+  payment_method: { type: String, default: 'Razorpay' },
+  payment_status: { type: String, default: 'successful' }, // 'successful', 'pending', 'failed', 'refunded'
+  razorpay_order_id: { type: String, default: '' },
+  razorpay_payment_id: { type: String, default: '' },
+  razorpay_signature: { type: String, default: '' },
+  created_at: { type: Date, default: Date.now }
+});
+
 const MongoAdmin = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
+const MongoUser = mongoose.models.User || mongoose.model('User', userSchema);
 const MongoSiteContent = mongoose.models.SiteContent || mongoose.model('SiteContent', siteContentSchema);
 const MongoMedia = mongoose.models.Media || mongoose.model('Media', mediaSchema);
 const MongoRevision = mongoose.models.Revision || mongoose.model('Revision', revisionSchema);
 const MongoContactSubmission = mongoose.models.ContactSubmission || mongoose.model('ContactSubmission', contactSubmissionSchema);
+const MongoCartItem = mongoose.models.CartItem || mongoose.model('CartItem', cartItemSchema);
+const MongoBooking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
+const MongoPayment = mongoose.models.Payment || mongoose.model('Payment', paymentSchema);
 
-// In-Memory Storage & Mock Models for when MongoDB is unavailable
+// In-Memory Storage for when MongoDB is offline
 const memory = {
   admins: [],
+  users: [],
+  cartItems: [],
+  bookings: [],
+  payments: [],
   siteContent: new Map(),
   media: [],
   revisions: [],
@@ -129,6 +206,171 @@ export const Admin = {
     const idx = memory.admins.findIndex(a => a._id?.toString() === id?.toString());
     if (idx !== -1) memory.admins.splice(idx, 1);
     return { success: true };
+  }
+};
+
+export const User = {
+  findOne(query) {
+    if (isMongoConnected) return MongoUser.findOne(query);
+    const found = memory.users.find(u => {
+      if (query.email) return u.email?.toLowerCase() === query.email?.toLowerCase();
+      if (query._id) return u._id?.toString() === query._id?.toString();
+      return true;
+    });
+    return wrapQuery(found ? { ...found } : null);
+  },
+  findById(id) {
+    if (isMongoConnected) return MongoUser.findById(id);
+    const found = memory.users.find(u => u._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  find(query) {
+    if (isMongoConnected) return MongoUser.find(query);
+    return wrapQuery(memory.users.map(u => ({ ...u })));
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoUser.create(data);
+    const doc = {
+      _id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      recent_views: [],
+      role: 'user',
+      ...data,
+      created_at: new Date()
+    };
+    memory.users.push(doc);
+    return doc;
+  },
+  async findByIdAndUpdate(id, update, options = {}) {
+    if (isMongoConnected) return MongoUser.findByIdAndUpdate(id, update, options);
+    const idx = memory.users.findIndex(u => u._id?.toString() === id?.toString());
+    if (idx === -1) return null;
+    memory.users[idx] = { ...memory.users[idx], ...update };
+    return { ...memory.users[idx] };
+  }
+};
+
+export const CartItem = {
+  find(query = {}) {
+    if (isMongoConnected) return MongoCartItem.find(query);
+    const items = memory.cartItems.filter(item => {
+      if (query.user_id && item.user_id?.toString() !== query.user_id?.toString()) return false;
+      return true;
+    });
+    return wrapQuery(items.map(i => ({ ...i })));
+  },
+  findById(id) {
+    if (isMongoConnected) return MongoCartItem.findById(id);
+    const found = memory.cartItems.find(i => i._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoCartItem.create(data);
+    const doc = {
+      _id: 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      ...data,
+      created_at: new Date()
+    };
+    memory.cartItems.push(doc);
+    return doc;
+  },
+  async findByIdAndUpdate(id, update, options = {}) {
+    if (isMongoConnected) return MongoCartItem.findByIdAndUpdate(id, update, options);
+    const idx = memory.cartItems.findIndex(i => i._id?.toString() === id?.toString());
+    if (idx === -1) return null;
+    memory.cartItems[idx] = { ...memory.cartItems[idx], ...update };
+    return { ...memory.cartItems[idx] };
+  },
+  async findByIdAndDelete(id) {
+    if (isMongoConnected) return MongoCartItem.findByIdAndDelete(id);
+    const idx = memory.cartItems.findIndex(i => i._id?.toString() === id?.toString());
+    if (idx !== -1) memory.cartItems.splice(idx, 1);
+    return { success: true };
+  },
+  async deleteMany(query = {}) {
+    if (isMongoConnected) return MongoCartItem.deleteMany(query);
+    if (query.user_id) {
+      memory.cartItems = memory.cartItems.filter(i => i.user_id?.toString() !== query.user_id?.toString());
+    }
+    return { acknowledged: true };
+  }
+};
+
+export const Booking = {
+  find(query = {}) {
+    if (isMongoConnected) return MongoBooking.find(query);
+    const items = memory.bookings.filter(b => {
+      if (query.user_id && b.user_id?.toString() !== query.user_id?.toString()) return false;
+      return true;
+    });
+    return wrapQuery(items.map(b => ({ ...b })));
+  },
+  findById(id) {
+    if (isMongoConnected) return MongoBooking.findById(id);
+    const found = memory.bookings.find(b => b._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  findOne(query) {
+    if (isMongoConnected) return MongoBooking.findOne(query);
+    const found = memory.bookings.find(b => {
+      if (query.booking_ref && b.booking_ref === query.booking_ref) return true;
+      if (query.razorpay_order_id && b.razorpay_order_id === query.razorpay_order_id) return true;
+      if (query._id && b._id === query._id) return true;
+      return false;
+    });
+    return wrapQuery(found ? { ...found } : null);
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoBooking.create(data);
+    const doc = {
+      _id: 'book_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      currency: 'INR',
+      status: 'confirmed',
+      payment_status: 'paid',
+      ...data,
+      created_at: new Date()
+    };
+    memory.bookings.unshift(doc);
+    return doc;
+  },
+  async findByIdAndUpdate(id, update, options = {}) {
+    if (isMongoConnected) return MongoBooking.findByIdAndUpdate(id, update, options);
+    const idx = memory.bookings.findIndex(b => b._id?.toString() === id?.toString());
+    if (idx === -1) return null;
+    memory.bookings[idx] = { ...memory.bookings[idx], ...update };
+    return { ...memory.bookings[idx] };
+  }
+};
+
+export const Payment = {
+  find(query = {}) {
+    if (isMongoConnected) return MongoPayment.find(query);
+    const items = memory.payments.filter(p => {
+      if (query.user_id && p.user_id?.toString() !== query.user_id?.toString()) return false;
+      return true;
+    });
+    return wrapQuery(items.map(p => ({ ...p })));
+  },
+  findOne(query) {
+    if (isMongoConnected) return MongoPayment.findOne(query);
+    const found = memory.payments.find(p => {
+      if (query.transaction_id && p.transaction_id === query.transaction_id) return true;
+      if (query.booking_ref && p.booking_ref === query.booking_ref) return true;
+      return false;
+    });
+    return wrapQuery(found ? { ...found } : null);
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoPayment.create(data);
+    const doc = {
+      _id: 'pay_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      payment_method: 'Razorpay',
+      currency: 'INR',
+      payment_status: 'successful',
+      ...data,
+      created_at: new Date()
+    };
+    memory.payments.unshift(doc);
+    return doc;
   }
 };
 
@@ -270,6 +512,72 @@ export async function connectDb() {
     }
   ];
 
+  // Seed sample verified traveler account for immediate demonstration
+  const userPassword = await bcrypt.hash('password123', 10);
+  const sampleUserId = 'user_traveler_101';
+  memory.users = [
+    {
+      _id: sampleUserId,
+      name: 'Rohan Sharma',
+      email: 'traveler@samthar.com',
+      password: userPassword,
+      phone: '+91 98765 43210',
+      role: 'user',
+      recent_views: ['samthar-hill-stay', 'suviksha-homestay'],
+      created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    }
+  ];
+
+  // Seed sample booking & payment for the traveler
+  const sampleBookingRef = 'ST-829104-M9K';
+  const sampleBookingId = 'book_sample_01';
+  const sampleTxnId = 'pay_RzP91823901';
+
+  memory.bookings = [
+    {
+      _id: sampleBookingId,
+      booking_ref: sampleBookingRef,
+      user_id: sampleUserId,
+      user_name: 'Rohan Sharma',
+      user_email: 'traveler@samthar.com',
+      user_phone: '+91 98765 43210',
+      stay_slug: 'samthar-hill-stay',
+      stay_name: 'SAMTHAR Hill-Stay',
+      room_name: 'Forest Suite',
+      image: 'https://thepinegetaways.com/images/homestays/mairung.jpg',
+      check_in: '2026-11-10',
+      check_out: '2026-11-13',
+      nights: 3,
+      guests: 2,
+      price_per_night: 112,
+      total_amount: 336,
+      currency: 'USD',
+      status: 'confirmed',
+      payment_status: 'paid',
+      razorpay_order_id: 'order_samp_91023',
+      razorpay_payment_id: sampleTxnId,
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    }
+  ];
+
+  memory.payments = [
+    {
+      _id: 'pay_sample_01',
+      transaction_id: sampleTxnId,
+      booking_ref: sampleBookingRef,
+      booking_id: sampleBookingId,
+      user_id: sampleUserId,
+      amount: 336,
+      currency: 'USD',
+      payment_method: 'Razorpay UPI',
+      payment_status: 'successful',
+      razorpay_order_id: 'order_samp_91023',
+      razorpay_payment_id: sampleTxnId,
+      razorpay_signature: 'verified_sig_sample',
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    }
+  ];
+
   const defaultData = getDefaultSiteData();
   memory.siteContent.set('published', {
     id: 'published',
@@ -294,7 +602,7 @@ export async function connectDb() {
       created_at: new Date()
     }
   ];
-  console.log('[AI Studio] In-memory store ready. Default admin: admin / ' + defaultPassword);
+  console.log('[AI Studio] In-memory store ready. Default traveler account: traveler@samthar.com / password123');
 }
 
 export function getDefaultSiteData() {

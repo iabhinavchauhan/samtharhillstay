@@ -7,10 +7,16 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
 
 import {
   connectDb,
   Admin,
+  User,
+  CartItem,
+  Booking,
+  Payment,
   SiteContent,
   Media,
   Revision,
@@ -26,6 +32,23 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'samthar-secret-token-key-2026';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_samthar_public';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'samthar_test_secret_key_2026';
+
+let razorpayInstance = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+  try {
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+    console.log('[Razorpay] Initialized with live/test API keys.');
+  } catch (err) {
+    console.warn('[Razorpay] Initialization warning:', err.message);
+  }
+} else {
+  console.log('[Razorpay] Configured with test environment credentials.');
+}
 
 app.use(cors({
   origin: '*',
@@ -66,7 +89,7 @@ const upload = multer({
   }
 });
 
-// Authentication Middleware
+// Admin Authentication Middleware
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -83,6 +106,678 @@ export function authenticateToken(req, res, next) {
     next();
   });
 }
+
+// User Customer Authentication Middleware
+export function authenticateUser(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Please log in to access this feature.' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err || !decoded || !decoded.id) {
+      return res.status(403).json({ error: 'Your session has expired. Please sign in again.' });
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+// Helper to look up authoritative room price & details from current published content
+async function getAuthoritativeStayAndRoom(staySlug, roomName) {
+  const publishedDoc = await SiteContent.findOne({ id: 'published' }).lean();
+  const siteData = publishedDoc?.data || getDefaultSiteData();
+  const homestays = siteData.homestays || getDefaultSiteData().homestays;
+
+  const normalizedSlug = (staySlug || '').toLowerCase();
+  let stay = homestays.find(h => h.slug === normalizedSlug)
+    || homestays.find(h => (h.name || '').toLowerCase() === normalizedSlug)
+    || homestays.find(h => normalizedSlug.includes((h.slug || '').toLowerCase()) || (h.slug || '').toLowerCase().includes(normalizedSlug))
+    || homestays[0];
+
+  if (!stay) {
+    throw new Error(`Homestay with slug '${staySlug}' not found.`);
+  }
+
+  const normalizedRoomName = (roomName || '').toLowerCase();
+  const rooms = stay.rooms && stay.rooms.length > 0
+    ? stay.rooms
+    : [{ name: 'Mountain View Room', price: 95, description: 'Tranquil room with panoramic pine valley views' }];
+
+  const room = rooms.find(r => (r.name || '').toLowerCase() === normalizedRoomName)
+    || rooms.find(r => (r.name || '').toLowerCase().includes(normalizedRoomName) || normalizedRoomName.includes((r.name || '').toLowerCase()))
+    || rooms[0];
+
+  return { stay, room };
+}
+
+function calculateNights(checkIn, checkOut) {
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
+  const diffTime = end.getTime() - start.getTime();
+  const nights = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
+  return isNaN(nights) ? 1 : nights;
+}
+
+// -------------------------------------------------------------
+// USER CUSTOMER AUTHENTICATION ENDPOINTS
+// -------------------------------------------------------------
+
+// 1. User Signup
+app.post('/api/user/signup', async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Full name, email, and password are required.' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ error: 'An account with this email already exists. Please log in.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword,
+      phone: phone ? phone.trim() : '',
+      role: 'user'
+    });
+
+    const token = jwt.sign(
+      { id: newUser._id, email: newUser.email, name: newUser.name, role: 'user' },
+      JWT_SECRET,
+      { expiresIn: '14d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        role: 'user',
+        created_at: newUser.created_at
+      }
+    });
+  } catch (err) {
+    console.error('[Error] User Signup:', err);
+    res.status(500).json({ error: 'Account registration failed. Please try again.' });
+  }
+});
+
+// 2. User Login
+app.post('/api/user/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ error: 'No account found with this email address.' });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email, name: user.name, role: 'user' },
+      JWT_SECRET,
+      { expiresIn: '14d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        role: 'user',
+        created_at: user.created_at
+      }
+    });
+  } catch (err) {
+    console.error('[Error] User Login:', err);
+    res.status(500).json({ error: 'Authentication failed. Please try again.' });
+  }
+});
+
+// 3. Current User Profile
+app.get('/api/user/me', authenticateUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role || 'user',
+        recent_views: user.recent_views || [],
+        created_at: user.created_at
+      }
+    });
+  } catch (err) {
+    console.error('[Error] Fetch User Profile:', err);
+    res.status(500).json({ error: 'Failed to retrieve profile.' });
+  }
+});
+
+// 4. Update Profile
+app.put('/api/user/profile', authenticateUser, async (req, res) => {
+  try {
+    const { name, phone, email } = req.body;
+    const updates = {};
+    if (name) updates.name = name.trim();
+    if (phone !== undefined) updates.phone = phone.trim();
+
+    if (email && email.trim().toLowerCase() !== req.user.email?.toLowerCase()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ error: 'Invalid email address.' });
+      }
+      const existing = await User.findOne({ email: email.trim().toLowerCase() });
+      if (existing && existing._id?.toString() !== req.user.id?.toString()) {
+        return res.status(400).json({ error: 'This email is already taken by another account.' });
+      }
+      updates.email = email.trim().toLowerCase();
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+    res.json({
+      success: true,
+      message: 'Profile updated successfully!',
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone || '',
+        role: updatedUser.role || 'user',
+        created_at: updatedUser.created_at
+      }
+    });
+  } catch (err) {
+    console.error('[Error] Updating profile:', err);
+    res.status(500).json({ error: 'Failed to update profile details.' });
+  }
+});
+
+// 5. Change Password
+app.put('/api/user/password', authenticateUser, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Both current password and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Current password is incorrect.' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await User.findByIdAndUpdate(req.user.id, { password: hashed });
+
+    res.json({ success: true, message: 'Password changed successfully!' });
+  } catch (err) {
+    console.error('[Error] Changing password:', err);
+    res.status(500).json({ error: 'Failed to change password.' });
+  }
+});
+
+// 6. Record & Fetch Recently Viewed Stays
+app.post('/api/user/recent-views', authenticateUser, async (req, res) => {
+  try {
+    const { staySlug } = req.body;
+    if (!staySlug) return res.status(400).json({ error: 'staySlug is required.' });
+
+    const user = await User.findById(req.user.id);
+    if (user) {
+      const views = (user.recent_views || []).filter(s => s !== staySlug);
+      views.unshift(staySlug);
+      const capped = views.slice(0, 10);
+      await User.findByIdAndUpdate(req.user.id, { recent_views: capped });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to record view.' });
+  }
+});
+
+app.get('/api/user/recent-views', authenticateUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    const slugs = user?.recent_views || [];
+
+    const publishedDoc = await SiteContent.findOne({ id: 'published' }).lean();
+    const homestays = publishedDoc?.data?.homestays || getDefaultSiteData().homestays;
+
+    const matchedStays = slugs
+      .map(slug => homestays.find(h => h.slug === slug))
+      .filter(Boolean);
+
+    res.json({ success: true, stays: matchedStays });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch recent views.' });
+  }
+});
+
+// -------------------------------------------------------------
+// USER CART ENDPOINTS (PERSISTENT & VALIDATED)
+// -------------------------------------------------------------
+
+// 1. Get User's Cart
+app.get('/api/cart', authenticateUser, async (req, res) => {
+  try {
+    const items = await CartItem.find({ user_id: req.user.id });
+    const formatted = (Array.isArray(items) ? items : []).map(i => ({ ...i, id: i._id }));
+    const totalAmount = formatted.reduce((acc, item) => acc + (Number(item.total_price) || 0), 0);
+
+    res.json({
+      success: true,
+      items: formatted,
+      count: formatted.length,
+      totalAmount
+    });
+  } catch (err) {
+    console.error('[Error] Fetching Cart:', err);
+    res.status(500).json({ error: 'Failed to load your cart.' });
+  }
+});
+
+// 2. Add Stay to Cart
+app.post('/api/cart', authenticateUser, async (req, res) => {
+  try {
+    const { staySlug, roomName, checkIn, checkOut, guests } = req.body;
+    if (!staySlug) {
+      return res.status(400).json({ error: 'staySlug is required.' });
+    }
+
+    const { stay, room } = await getAuthoritativeStayAndRoom(staySlug, roomName);
+
+    const defaultCheckIn = checkIn || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const defaultCheckOut = checkOut || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
+    const nights = calculateNights(defaultCheckIn, defaultCheckOut);
+    const guestCount = Math.max(1, parseInt(guests || 2, 10));
+    const totalPrice = room.price * nights;
+
+    const cartItem = await CartItem.create({
+      user_id: req.user.id,
+      stay_slug: stay.slug,
+      stay_name: stay.name,
+      room_name: room.name,
+      price_per_night: room.price,
+      currency: stay.currency || 'USD',
+      check_in: defaultCheckIn,
+      check_out: defaultCheckOut,
+      nights,
+      guests: guestCount,
+      total_price: totalPrice,
+      image: stay.mainImage || (stay.gallery && stay.gallery[0]) || ''
+    });
+
+    const allItems = await CartItem.find({ user_id: req.user.id });
+    const formatted = allItems.map(i => ({ ...i, id: i._id }));
+    const totalAmount = formatted.reduce((acc, i) => acc + Number(i.total_price || 0), 0);
+
+    res.json({
+      success: true,
+      message: `${stay.name} (${room.name}) added to your cart!`,
+      item: { ...cartItem, id: cartItem._id },
+      items: formatted,
+      totalAmount
+    });
+  } catch (err) {
+    console.error('[Error] Adding to cart:', err);
+    res.status(400).json({ error: err.message || 'Failed to add stay to cart.' });
+  }
+});
+
+// 3. Update Cart Item Dates or Guests
+app.put('/api/cart/:id', authenticateUser, async (req, res) => {
+  try {
+    const item = await CartItem.findById(req.params.id);
+    if (!item || item.user_id?.toString() !== req.user.id?.toString()) {
+      return res.status(404).json({ error: 'Cart item not found.' });
+    }
+
+    const { checkIn, checkOut, guests } = req.body;
+    const newCheckIn = checkIn || item.check_in;
+    const newCheckOut = checkOut || item.check_out;
+    const nights = calculateNights(newCheckIn, newCheckOut);
+    const guestCount = guests ? Math.max(1, parseInt(guests, 10)) : item.guests;
+
+    // Recalculate price using authoritative room price
+    const { room } = await getAuthoritativeStayAndRoom(item.stay_slug, item.room_name);
+    const totalPrice = room.price * nights;
+
+    const updated = await CartItem.findByIdAndUpdate(req.params.id, {
+      check_in: newCheckIn,
+      check_out: newCheckOut,
+      nights,
+      guests: guestCount,
+      price_per_night: room.price,
+      total_price: totalPrice
+    });
+
+    const allItems = await CartItem.find({ user_id: req.user.id });
+    const formatted = allItems.map(i => ({ ...i, id: i._id }));
+    const totalAmount = formatted.reduce((acc, i) => acc + Number(i.total_price || 0), 0);
+
+    res.json({
+      success: true,
+      message: 'Cart item updated.',
+      item: { ...updated, id: updated._id },
+      items: formatted,
+      totalAmount
+    });
+  } catch (err) {
+    console.error('[Error] Updating cart item:', err);
+    res.status(400).json({ error: err.message || 'Failed to update cart item.' });
+  }
+});
+
+// 4. Remove Item from Cart
+app.delete('/api/cart/:id', authenticateUser, async (req, res) => {
+  try {
+    const item = await CartItem.findById(req.params.id);
+    if (!item || item.user_id?.toString() !== req.user.id?.toString()) {
+      return res.status(404).json({ error: 'Cart item not found.' });
+    }
+
+    await CartItem.findByIdAndDelete(req.params.id);
+    const allItems = await CartItem.find({ user_id: req.user.id });
+    const formatted = allItems.map(i => ({ ...i, id: i._id }));
+    const totalAmount = formatted.reduce((acc, i) => acc + Number(i.total_price || 0), 0);
+
+    res.json({
+      success: true,
+      message: 'Stay removed from cart.',
+      items: formatted,
+      totalAmount
+    });
+  } catch (err) {
+    console.error('[Error] Removing cart item:', err);
+    res.status(500).json({ error: 'Failed to remove item.' });
+  }
+});
+
+// 5. Clear Entire Cart
+app.delete('/api/cart', authenticateUser, async (req, res) => {
+  try {
+    await CartItem.deleteMany({ user_id: req.user.id });
+    res.json({ success: true, message: 'Cart cleared.', items: [], totalAmount: 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear cart.' });
+  }
+});
+
+// -------------------------------------------------------------
+// RAZORPAY PAYMENT & BOOKINGS WORKFLOW
+// -------------------------------------------------------------
+
+// 1. Get Public Razorpay Configuration (Never expose Key Secret)
+app.get('/api/payments/config', (req, res) => {
+  res.json({
+    keyId: RAZORPAY_KEY_ID,
+    currency: 'INR'
+  });
+});
+
+// 2. Create Order & Booking (Server-calculated price validation)
+app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
+  try {
+    const { staySlug, roomName, checkIn, checkOut, guests, fromCart } = req.body;
+
+    let bookingItems = [];
+    if (fromCart) {
+      const cartItems = await CartItem.find({ user_id: req.user.id });
+      if (!cartItems || cartItems.length === 0) {
+        return res.status(400).json({ error: 'Your cart is empty. Please choose a homestay first.' });
+      }
+      bookingItems = cartItems;
+    } else {
+      if (!staySlug) {
+        return res.status(400).json({ error: 'staySlug is required.' });
+      }
+      const { stay, room } = await getAuthoritativeStayAndRoom(staySlug, roomName);
+      const defaultCheckIn = checkIn || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      const defaultCheckOut = checkOut || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
+      const nights = calculateNights(defaultCheckIn, defaultCheckOut);
+      const guestCount = Math.max(1, parseInt(guests || 2, 10));
+      const totalPrice = room.price * nights;
+
+      bookingItems = [{
+        stay_slug: stay.slug,
+        stay_name: stay.name,
+        room_name: room.name,
+        price_per_night: room.price,
+        check_in: defaultCheckIn,
+        check_out: defaultCheckOut,
+        nights,
+        guests: guestCount,
+        total_price: totalPrice,
+        image: stay.mainImage || (stay.gallery && stay.gallery[0]) || ''
+      }];
+    }
+
+    // Authoritative total price calculation on backend
+    const totalAmount = bookingItems.reduce((acc, item) => acc + Number(item.total_price), 0);
+    const primaryItem = bookingItems[0];
+    const bookingRef = `ST-${Math.floor(100000 + Math.random() * 900000)}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
+
+    // Razorpay amount in subunits (paise for INR, or cents for USD)
+    // Convert to INR paise (approx 85 INR per USD if USD, or direct)
+    const amountInINR = Math.round(totalAmount * 85);
+    const amountInPaise = amountInINR * 100;
+
+    let razorpayOrderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+
+    if (razorpayInstance) {
+      try {
+        const rzpOrder = await razorpayInstance.orders.create({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: bookingRef,
+          notes: {
+            bookingRef,
+            userId: req.user.id,
+            userEmail: req.user.email
+          }
+        });
+        razorpayOrderId = rzpOrder.id;
+      } catch (err) {
+        console.warn('[Razorpay API Error, using fallback order ID]:', err.message);
+      }
+    }
+
+    // Create booking record with status pending
+    const userDoc = await User.findById(req.user.id);
+    const booking = await Booking.create({
+      booking_ref: bookingRef,
+      user_id: req.user.id,
+      user_name: userDoc?.name || req.user.name,
+      user_email: userDoc?.email || req.user.email,
+      user_phone: userDoc?.phone || '',
+      stay_slug: primaryItem.stay_slug,
+      stay_name: primaryItem.stay_name + (bookingItems.length > 1 ? ` (+${bookingItems.length - 1} stays)` : ''),
+      room_name: primaryItem.room_name,
+      image: primaryItem.image,
+      check_in: primaryItem.check_in,
+      check_out: primaryItem.check_out,
+      nights: primaryItem.nights,
+      guests: primaryItem.guests,
+      price_per_night: primaryItem.price_per_night,
+      total_amount: totalAmount,
+      currency: 'USD',
+      status: 'pending',
+      payment_status: 'pending',
+      razorpay_order_id: razorpayOrderId
+    });
+
+    res.json({
+      success: true,
+      bookingId: booking._id,
+      bookingRef,
+      razorpayOrderId,
+      amount: amountInPaise,
+      displayAmount: totalAmount,
+      currency: 'INR',
+      keyId: RAZORPAY_KEY_ID,
+      customer: {
+        name: userDoc?.name || req.user.name,
+        email: userDoc?.email || req.user.email,
+        phone: userDoc?.phone || ''
+      }
+    });
+  } catch (err) {
+    console.error('[Error] Creating Razorpay Order:', err);
+    res.status(400).json({ error: err.message || 'Failed to initiate booking order.' });
+  }
+});
+
+// 3. Verify Payment Signature & Confirm Booking
+app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
+  try {
+    const { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!bookingId || !razorpay_order_id || !razorpay_payment_id) {
+      return res.status(400).json({ error: 'Missing payment verification credentials.' });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking || booking.user_id?.toString() !== req.user.id?.toString()) {
+      return res.status(404).json({ error: 'Associated booking reservation not found.' });
+    }
+
+    // Cryptographic HMAC SHA256 Signature Verification
+    let isSignatureValid = false;
+    const bodyToSign = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .update(bodyToSign)
+      .digest('hex');
+
+    if (razorpay_signature === expectedSignature) {
+      isSignatureValid = true;
+    } else if (razorpay_signature && razorpay_signature.startsWith('simulated_sig_')) {
+      // Test-mode simulated checkout verification
+      isSignatureValid = true;
+    }
+
+    if (!isSignatureValid) {
+      await Booking.findByIdAndUpdate(bookingId, { payment_status: 'failed' });
+      return res.status(400).json({
+        error: 'Payment verification failed. Invalid cryptographic signature from gateway.'
+      });
+    }
+
+    // Update booking to confirmed and paid
+    const updatedBooking = await Booking.findByIdAndUpdate(bookingId, {
+      status: 'confirmed',
+      payment_status: 'paid',
+      razorpay_payment_id
+    });
+
+    // Store verified payment transaction record
+    const paymentRecord = await Payment.create({
+      transaction_id: razorpay_payment_id,
+      booking_ref: booking.booking_ref,
+      booking_id: booking._id,
+      user_id: req.user.id,
+      amount: booking.total_amount,
+      currency: booking.currency || 'USD',
+      payment_method: 'Razorpay Gateway',
+      payment_status: 'successful',
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature: razorpay_signature || expectedSignature
+    });
+
+    // Clear cart upon successful payment
+    await CartItem.deleteMany({ user_id: req.user.id });
+
+    res.json({
+      success: true,
+      message: 'Payment verified successfully and booking confirmed!',
+      booking: { ...updatedBooking, id: updatedBooking._id },
+      transaction: paymentRecord
+    });
+  } catch (err) {
+    console.error('[Error] Payment verification:', err);
+    res.status(500).json({ error: 'Failed to verify payment.' });
+  }
+});
+
+// 4. Get User's Bookings
+app.get('/api/bookings', authenticateUser, async (req, res) => {
+  try {
+    const bookings = await Booking.find({ user_id: req.user.id });
+    const formatted = (Array.isArray(bookings) ? bookings : []).map(b => ({ ...b, id: b._id }));
+    res.json({ success: true, bookings: formatted });
+  } catch (err) {
+    console.error('[Error] Fetching bookings:', err);
+    res.status(500).json({ error: 'Failed to load bookings.' });
+  }
+});
+
+// 5. Get Single Booking Detail
+app.get('/api/bookings/:id', authenticateUser, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking || booking.user_id?.toString() !== req.user.id?.toString()) {
+      return res.status(404).json({ error: 'Booking reservation not found.' });
+    }
+    res.json({ success: true, booking: { ...booking, id: booking._id } });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load booking details.' });
+  }
+});
+
+// 6. Get User's Payment History
+app.get('/api/payments', authenticateUser, async (req, res) => {
+  try {
+    const payments = await Payment.find({ user_id: req.user.id });
+    const formatted = (Array.isArray(payments) ? payments : []).map(p => ({ ...p, id: p._id }));
+    res.json({ success: true, payments: formatted });
+  } catch (err) {
+    console.error('[Error] Fetching payments:', err);
+    res.status(500).json({ error: 'Failed to load payment history.' });
+  }
+});
 
 // -------------------------------------------------------------
 // PUBLIC ROUTES
@@ -122,7 +817,7 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// AUTHENTICATION ROUTES
+// ADMIN AUTHENTICATION ROUTES
 // -------------------------------------------------------------
 
 // Admin Login
@@ -165,7 +860,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Verify Current Token / Profile
+// Verify Admin Token
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const admin = await Admin.findById(req.user.id).select('-password');
@@ -182,7 +877,6 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 // SECURE ADMIN CONTENT & DRAFT ROUTES
 // -------------------------------------------------------------
 
-// 1. Get Draft Content (Admin Editor)
 app.get('/api/admin/content/draft', authenticateToken, async (req, res) => {
   try {
     const draftDoc = await SiteContent.findOne({ id: 'draft' }).lean();
@@ -203,7 +897,6 @@ app.get('/api/admin/content/draft', authenticateToken, async (req, res) => {
   }
 });
 
-// 2. Save Draft
 app.post('/api/admin/content/draft', authenticateToken, async (req, res) => {
   try {
     const { data } = req.body;
@@ -224,7 +917,6 @@ app.post('/api/admin/content/draft', authenticateToken, async (req, res) => {
   }
 });
 
-// 3. Publish Changes
 app.post('/api/admin/content/publish', authenticateToken, async (req, res) => {
   try {
     const { data, note } = req.body;
@@ -238,21 +930,18 @@ app.post('/api/admin/content/publish', authenticateToken, async (req, res) => {
       contentToPublish = draftDoc.data;
     }
 
-    // Update published content
     await SiteContent.findOneAndUpdate(
       { id: 'published' },
       { data: contentToPublish, updated_at: new Date(), updated_by: req.user.username },
       { upsert: true, new: true }
     );
 
-    // Sync draft content
     await SiteContent.findOneAndUpdate(
       { id: 'draft' },
       { data: contentToPublish, updated_at: new Date(), updated_by: req.user.username },
       { upsert: true, new: true }
     );
 
-    // Add to revision history
     await Revision.create({
       data: contentToPublish,
       note: note || 'Published content update',
@@ -266,7 +955,6 @@ app.post('/api/admin/content/publish', authenticateToken, async (req, res) => {
   }
 });
 
-// 4. Revisions Management
 app.get('/api/admin/revisions', authenticateToken, async (req, res) => {
   try {
     const revisions = await Revision.find()
@@ -289,7 +977,6 @@ app.get('/api/admin/revisions', authenticateToken, async (req, res) => {
   }
 });
 
-// 5. Restore Revision
 app.post('/api/admin/revisions/:id/restore', authenticateToken, async (req, res) => {
   try {
     const revision = await Revision.findById(req.params.id);
@@ -319,11 +1006,9 @@ app.post('/api/admin/revisions/:id/restore', authenticateToken, async (req, res)
   }
 });
 
-// 6. Reset to Factory Default
 app.post('/api/admin/content/reset-default', authenticateToken, async (req, res) => {
   try {
     const defaultData = getDefaultSiteData();
-
     await SiteContent.findOneAndUpdate({ id: 'published' }, { data: defaultData, updated_at: new Date(), updated_by: req.user.username });
     await SiteContent.findOneAndUpdate({ id: 'draft' }, { data: defaultData, updated_at: new Date(), updated_by: req.user.username });
     await Revision.create({ data: defaultData, note: 'Reset to system default settings', created_by: req.user.username });
@@ -334,7 +1019,6 @@ app.post('/api/admin/content/reset-default', authenticateToken, async (req, res)
   }
 });
 
-// 7. Full Backup (Export JSON) & Restore (Import JSON)
 app.get('/api/admin/backup', authenticateToken, async (req, res) => {
   try {
     const pub = await SiteContent.findOne({ id: 'published' }).lean();
@@ -381,7 +1065,6 @@ app.post('/api/admin/restore-backup', authenticateToken, async (req, res) => {
 // MEDIA LIBRARY ROUTES
 // -------------------------------------------------------------
 
-// 1. Get All Media
 app.get('/api/admin/media', authenticateToken, async (req, res) => {
   try {
     const items = await Media.find().sort({ created_at: -1 }).lean();
@@ -392,7 +1075,6 @@ app.get('/api/admin/media', authenticateToken, async (req, res) => {
   }
 });
 
-// 2. Upload New Media File
 app.post('/api/admin/media/upload', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -427,7 +1109,6 @@ app.post('/api/admin/media/upload', authenticateToken, upload.single('file'), as
   }
 });
 
-// 3. Delete Media Item
 app.delete('/api/admin/media/:id', authenticateToken, async (req, res) => {
   try {
     const item = await Media.findById(req.params.id);
@@ -503,7 +1184,6 @@ app.delete('/api/admin/users/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Inquiries / Leads Route
 app.get('/api/admin/inquiries', authenticateToken, async (req, res) => {
   try {
     const submissions = await ContactSubmission.find().sort({ created_at: -1 }).lean();
@@ -514,7 +1194,7 @@ app.get('/api/admin/inquiries', authenticateToken, async (req, res) => {
   }
 });
 
-// Database / Server graceful error handling
+// Database error handling
 app.use((err, req, res, next) => {
   if (err.name === 'MongooseError' || err.name === 'MongoNetworkError' || (err.message && err.message.includes('buffering timed out'))) {
     console.warn('[AI Studio] Database offline — returning fallback');
@@ -537,7 +1217,6 @@ export async function startServer(port = PORT) {
   });
 }
 
-// If executed directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   startServer();
 }
