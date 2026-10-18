@@ -30,7 +30,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'samthar-secret-token-key-2026';
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_samthar_public';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'samthar_test_secret_key_2026';

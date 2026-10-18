@@ -129,97 +129,125 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* User Auth: Login or Account Dropdown */}
-          {isAuthenticated && user ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setUserDropdown(!userDropdown)}
-                className={`flex items-center gap-2 rounded-[10px] border px-3 py-2 text-[11px] font-semibold transition ${
-                  isHome
-                    ? 'border-[#caa34b]/50 bg-[#caa34b]/20 text-white hover:bg-[#caa34b]/30'
-                    : 'border-[#caa34b]/60 bg-[#caa34b]/15 text-[#10281e] hover:bg-[#caa34b]/25'
-                }`}
-              >
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#caa34b] text-[10px] font-bold text-[#10281e]">
-                  {(user.name || user.email || 'U')[0].toUpperCase()}
-                </div>
-                <span className="max-w-[90px] truncate">{user.name?.split(' ')[0] || 'Account'}</span>
-                <ChevronDown className="h-3 w-3 text-[#caa34b]" />
-              </button>
-
-              {userDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-[#e5dfd1] bg-[#fffdf8] p-2 text-xs text-[#10281e] shadow-xl animate-fadeIn z-50">
-                  <div className="border-b border-[#eee8da] px-3 py-2 text-[11px]">
-                    <p className="font-bold text-[#10281e] truncate">{user.name}</p>
-                    <p className="text-[10px] text-[#59645a] truncate">{user.email}</p>
-                  </div>
-                  <Link
-                    to="/dashboard?tab=profile"
-                    onClick={() => setUserDropdown(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
-                  >
-                    <User className="h-3.5 w-3.5 text-[#caa34b]" />
-                    <span>My Profile</span>
-                  </Link>
-                  <Link
-                    to="/dashboard?tab=cart"
-                    onClick={() => setUserDropdown(false)}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
-                  >
-                    <span className="flex items-center gap-2">
-                      <ShoppingBag className="h-3.5 w-3.5 text-[#caa34b]" />
-                      <span>My Cart</span>
-                    </span>
-                    {cartCount > 0 && (
-                      <span className="rounded-full bg-[#caa34b] px-1.5 py-0.2 text-[9px] font-bold text-[#10281e]">
-                        {cartCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link
-                    to="/dashboard?tab=bookings"
-                    onClick={() => setUserDropdown(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
-                  >
-                    <Calendar className="h-3.5 w-3.5 text-[#caa34b]" />
-                    <span>My Bookings</span>
-                  </Link>
-                  <Link
-                    to="/dashboard?tab=payments"
-                    onClick={() => setUserDropdown(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
-                  >
-                    <CreditCard className="h-3.5 w-3.5 text-[#caa34b]" />
-                    <span>Payment History</span>
-                  </Link>
-                  <div className="border-t border-[#eee8da] mt-1 pt-1">
-                    <button
-                      onClick={() => {
-                        setUserDropdown(false)
-                        logout()
-                        navigate('/')
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50 transition font-medium"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              className={`rounded-[10px] border px-3 py-2 text-[11px] font-semibold transition ${
+          {/* Combined Account: User Sign In / Sign Up + Admin Portal */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setUserDropdown(!userDropdown)}
+              className={`flex items-center gap-2 rounded-[10px] border px-3 py-2 text-[11px] font-semibold transition ${
                 isHome
                   ? 'border-white/25 text-white hover:bg-white/10'
                   : 'border-[#d8d2c5] text-[#324239] hover:bg-white'
               }`}
             >
-              Sign In
-            </Link>
-          )}
+              {isAuthenticated && user ? (
+                <>
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#caa34b] text-[10px] font-bold text-[#10281e]">
+                    {(user.name || user.email || 'U')[0].toUpperCase()}
+                  </div>
+                  <span className="max-w-[90px] truncate">{user.name?.split(' ')[0] || 'Account'}</span>
+                  <ChevronDown className="h-3 w-3 text-[#caa34b]" />
+                </>
+              ) : (
+                <>
+                  <User className="h-4 w-4" />
+                  <span>Account</span>
+                  <ChevronDown className="h-3 w-3" />
+                </>
+              )}
+            </button>
+
+            {userDropdown && (
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-[#e5dfd1] bg-[#fffdf8] p-2 text-xs text-[#10281e] shadow-xl animate-fadeIn z-50">
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="border-b border-[#eee8da] px-3 py-2 text-[11px]">
+                      <p className="font-bold text-[#10281e] truncate">{user.name}</p>
+                      <p className="text-[10px] text-[#59645a] truncate">{user.email}</p>
+                    </div>
+                    <Link
+                      to="/dashboard?tab=profile"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
+                    >
+                      <User className="h-3.5 w-3.5 text-[#caa34b]" />
+                      <span>My Profile</span>
+                    </Link>
+                    <Link
+                      to="/dashboard?tab=cart"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShoppingBag className="h-3.5 w-3.5 text-[#caa34b]" />
+                        <span>My Cart</span>
+                      </span>
+                      {cartCount > 0 && (
+                        <span className="rounded-full bg-[#caa34b] px-1.5 py-0.2 text-[9px] font-bold text-[#10281e]">
+                          {cartCount}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/dashboard?tab=bookings"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
+                    >
+                      <Calendar className="h-3.5 w-3.5 text-[#caa34b]" />
+                      <span>My Bookings</span>
+                    </Link>
+                    <Link
+                      to="/dashboard?tab=payments"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
+                    >
+                      <CreditCard className="h-3.5 w-3.5 text-[#caa34b]" />
+                      <span>Payment History</span>
+                    </Link>
+                    <div className="border-t border-[#eee8da] mt-1 pt-1">
+                      <button
+                        onClick={() => {
+                          setUserDropdown(false)
+                          logout()
+                          navigate('/')
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50 transition font-medium"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
+                    >
+                      <User className="h-3.5 w-3.5 text-[#caa34b]" />
+                      <span>Sign In</span>
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium"
+                    >
+                      <User className="h-3.5 w-3.5 text-[#caa34b]" />
+                      <span>Create Account</span>
+                    </Link>
+                    <a
+                      href="/admin/login"
+                      onClick={() => setUserDropdown(false)}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#faf8f1] transition font-medium border-t border-[#eee8da] pt-2"
+                    >
+                      <span aria-hidden="true">🔒</span>
+                      <span>Administrator Portal</span>
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <a
             href={contact.brochureUrl || "/samthar-brochure.pdf"}
@@ -237,19 +265,6 @@ export default function Navbar() {
             className="rounded-[10px] bg-[var(--accent-gold,#caa34b)] px-3.5 py-2 text-[11px] font-semibold text-[#17291e] transition hover:bg-[var(--accent-gold-hover,#d8b85e)]"
           >
             {nav.ctaText || 'Book Your Stay'}
-          </a>
-
-          <a
-            href="/admin/login"
-            title="Admin Management Portal"
-            className={`flex items-center gap-1 rounded-[10px] border px-2.5 py-2 text-[11px] font-semibold transition ${
-              isHome
-                ? 'border-[#caa34b]/40 bg-[#caa34b]/15 text-[#caa34b] hover:bg-[#caa34b]/25 hover:text-white'
-                : 'border-[#caa34b]/60 bg-[#caa34b]/10 text-[#7a5e1c] hover:bg-[#caa34b]/20 hover:text-[#10281e]'
-            }`}
-          >
-            <span aria-hidden="true">🔒</span>
-            <span className="hidden lg:inline">Admin</span>
           </a>
         </div>
 
