@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
+import { formatPrice } from '../utils/currency';
 import {
   ShieldCheck,
   CreditCard,
@@ -125,8 +126,10 @@ export default function Checkout() {
 
       setPendingOrderData(orderData);
 
-      // 2. Check if official Razorpay checkout is available and key is configured
-      if (window.Razorpay && orderData.keyId && !orderData.keyId.includes('public')) {
+      // 2. Open the live Razorpay widget only when the server created a real
+      //    gateway order. Otherwise fall back to the simulation checkout.
+      const liveGatewayReady = orderData.paymentMode === 'razorpay' && window.Razorpay && orderData.keyId;
+      if (liveGatewayReady) {
         const options = {
           key: orderData.keyId,
           amount: orderData.amount,
@@ -262,7 +265,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between items-center border-t border-[#eee8da] pt-3 text-sm font-bold">
                 <span className="text-[#10281e]">Amount Paid</span>
-                <span className="text-emerald-700">${paymentSuccess.total_amount} (Paid via Razorpay)</span>
+                <span className="text-emerald-700">{formatPrice(paymentSuccess.total_amount)} (Paid via Razorpay)</span>
               </div>
             </div>
 
@@ -395,7 +398,7 @@ export default function Checkout() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-sm text-[#10281e]">${item.total_price}</span>
+                    <span className="font-bold text-sm text-[#10281e]">{formatPrice(item.total_price)}</span>
                   </div>
                 </div>
               ))}
@@ -424,7 +427,7 @@ export default function Checkout() {
             <div className="space-y-3 text-xs text-[#59645a] border-b border-[#eee8da] pb-4">
               <div className="flex justify-between">
                 <span>Room Charges ({items.length} stays)</span>
-                <span className="font-semibold text-[#10281e]">${computedSubtotal}</span>
+                <span className="font-semibold text-[#10281e]">{formatPrice(computedSubtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Himalayan Farm Breakfast & Dinner</span>
@@ -443,10 +446,10 @@ export default function Checkout() {
             <div className="flex items-baseline justify-between pt-1">
               <div>
                 <span className="block text-xs uppercase font-bold text-[#10281e]">Grand Total</span>
-                <span className="text-[10px] text-[#8a948b]">Approx ₹{Math.round(computedSubtotal * 85)}</span>
+                <span className="text-[10px] text-[#8a948b]">All taxes and levies included</span>
               </div>
               <span className="display-font text-3xl font-bold text-[#10281e]">
-                ${computedSubtotal}
+                {formatPrice(computedSubtotal)}
               </span>
             </div>
 
@@ -487,7 +490,7 @@ export default function Checkout() {
             <div className="bg-[#10281e] p-6 text-white space-y-1">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-[#caa34b]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#caa34b]">
-                  Razorpay Checkout Gateway
+                  Razorpay Test Sandbox
                 </span>
                 <button
                   onClick={() => setShowTestModal(false)}
@@ -507,7 +510,7 @@ export default function Checkout() {
                 <div className="flex justify-between">
                   <span className="text-[#59645a]">Payable Amount</span>
                   <span className="font-bold text-sm text-[#10281e]">
-                    ${pendingOrderData?.displayAmount} (₹{Math.round(pendingOrderData?.displayAmount * 85)})
+                    {formatPrice(pendingOrderData?.displayAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between">

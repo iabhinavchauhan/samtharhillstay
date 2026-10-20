@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Shield,
   Layers,
-  Settings
+  Settings,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import AdminLogin from './AdminLogin';
@@ -35,6 +36,7 @@ import RevisionBackup from './RevisionBackup';
 import UserManagement from './UserManagement';
 import InquiriesManager from './InquiriesManager';
 import LivePreviewModal from './LivePreviewModal';
+import PaymentGatewaySettings from './PaymentGatewaySettings';
 
 export default function AdminDashboard() {
   const { user, token, logout, isAuthenticated, loading: authLoading } = useAuth();
@@ -162,6 +164,7 @@ export default function AdminDashboard() {
     { id: 'media', label: 'Media Library', icon: ImageIcon },
     { id: 'nav-footer', label: 'Header, Footer & SEO', icon: Menu },
     { id: 'inquiries', label: 'Guest Inquiries & Leads', icon: Inbox },
+    { id: 'payments', label: 'Payments & Gateway', icon: CreditCard },
     { id: 'users', label: 'Admin Accounts', icon: Users },
     { id: 'revisions', label: 'Revisions & Backups', icon: History }
   ];
@@ -441,7 +444,7 @@ export default function AdminDashboard() {
                         backgroundColor: '#faf8f1',
                         textColor: '#1b2b22',
                         fontFamily: 'Inter, sans-serif',
-                        displayFont: 'Cinzel, serif',
+                        displayFont: 'DM Sans, system-ui, sans-serif',
                         borderRadius: '20px',
                         buttonRadius: '10px'
                       };
@@ -461,10 +464,13 @@ export default function AdminDashboard() {
                 {/* 9. INQUIRIES & LEADS */}
                 {activeTab === 'inquiries' && <InquiriesManager />}
 
-                {/* 10. USER ACCOUNTS */}
+                {/* 10. PAYMENTS & GATEWAY */}
+                {activeTab === 'payments' && <PaymentGatewaySettings />}
+
+                {/* 11. USER ACCOUNTS */}
                 {activeTab === 'users' && <UserManagement />}
 
-                {/* 11. REVISIONS & BACKUP */}
+                {/* 12. REVISIONS & BACKUP */}
                 {activeTab === 'revisions' && (
                   <RevisionBackup onRestoreSuccess={fetchDraftData} />
                 )}

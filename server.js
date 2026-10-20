@@ -22,7 +22,7 @@ async function bootstrap() {
   if (isProd && fs.existsSync(path.join(clientDistDir, 'index.html'))) {
     console.log('[Samthar] Production mode: serving static client bundle from client/dist');
     app.use(express.static(clientDistDir));
-    app.get('*', (req, res, next) => {
+    app.get('/{*splat}', (req, res, next) => {
       if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
         return next();
       }
@@ -40,7 +40,7 @@ async function bootstrap() {
 
     app.use(vite.middlewares);
 
-    app.use('*', async (req, res, next) => {
+    app.use('/{*splat}', async (req, res, next) => {
       const url = req.originalUrl;
       if (url.startsWith('/api') || url.startsWith('/uploads')) {
         return next();

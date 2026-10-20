@@ -1,7 +1,7 @@
 export default function FilterPanel({ filters, onFilterChange }) {
   const filterOptions = [
     { key: 'type', label: 'Type', options: ['All', 'Mountain', 'Beach', 'Desert', 'Forest', 'Lake', 'Waterfall', 'Island', 'Snow', 'River', 'Ocean'] },
-    { key: 'budget', label: 'Budget', options: ['All', '$', '$$', '$$$'] },
+    { key: 'budget', label: 'Budget', options: ['All', '₹', '₹₹', '₹₹₹'] },
     { key: 'difficulty', label: 'Difficulty', options: ['All', 'Easy', 'Moderate', 'Hard'] },
   ]
 

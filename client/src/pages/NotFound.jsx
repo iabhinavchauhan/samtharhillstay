@@ -11,7 +11,7 @@ export default function NotFound() {
     >
       <div className="max-w-xl text-center rounded-[32px] bg-smoke/80 border border-smoke/70 p-10 shadow-soft backdrop-blur-xl">
         <p className="text-sm uppercase tracking-[0.35em] text-forest">Page not found</p>
-        <h1 className="mt-6 text-4xl font-serif font-semibold text-forest">404 · Lost in the hills</h1>
+        <h1 className="mt-6 text-4xl font-sans font-semibold text-forest">404 · Lost in the hills</h1>
         <p className="mt-4 text-base text-forest/70">The path you tried to follow is hidden in mist. Return to the homestay sanctuary and continue exploring.</p>
         <Link to="/" className="mt-8 inline-flex rounded-full bg-forest px-6 py-3 text-sm font-semibold text-cream transition hover:bg-forest/90">
           Return home

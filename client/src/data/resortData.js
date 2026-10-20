@@ -1,6 +1,8 @@
 export const homestays = [
   {
     slug: 'samthar-hill-stay',
+
+    currency: 'INR',
     name: 'Samthar',
     location: 'Kalimpong Hills',
     tagline: 'A luxury hill stay nestled among pine forests with emerald valley views.',
@@ -40,6 +42,8 @@ export const homestays = [
   },
   {
     slug: 'suviksha-homestay',
+
+    currency: 'INR',
     name: 'Suviksha Homestay',
     location: 'Misty Valleys',
     tagline: 'A warm homestay on a green plateau with calm mountain views.',
@@ -79,6 +83,8 @@ export const homestays = [
   },
   {
     slug: 'asher-homestay',
+
+    currency: 'INR',
     name: 'Asher Homestay',
     location: 'Emerald Ridge',
     tagline: 'A premium homestay with sweeping cedar vistas and mountain calm.',

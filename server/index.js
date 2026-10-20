@@ -23,6 +23,8 @@ import {
   ContactSubmission,
   getDefaultSiteData
 } from './db.js';
+import { sanitiseContentFonts } from './utils/theme.js';
+import { describeRazorpayError, validateRazorpayCredentials, cleanCredential, razorpaySetupInstructions, checkRazorpayCredentials } from './utils/razorpay.js';
 
 dotenv.config();
 
@@ -32,23 +34,62 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'samthar-secret-token-key-2026';
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_samthar_public';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'samthar_test_secret_key_2026';
+const ENV_FILE = path.join(__dirname, '.env');
 
+let RAZORPAY_KEY_ID = cleanCredential(process.env.RAZORPAY_KEY_ID);
+let RAZORPAY_KEY_SECRET = cleanCredential(process.env.RAZORPAY_KEY_SECRET);
+let razorpayCredentialProblems = [];
+let razorpayConfigured = false;
 let razorpayInstance = null;
-if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-  try {
-    razorpayInstance = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET
-    });
-    console.log('[Razorpay] Initialized with live/test API keys.');
-  } catch (err) {
-    console.warn('[Razorpay] Initialization warning:', err.message);
+
+function configureRazorpay() {
+  RAZORPAY_KEY_ID = cleanCredential(process.env.RAZORPAY_KEY_ID);
+  RAZORPAY_KEY_SECRET = cleanCredential(process.env.RAZORPAY_KEY_SECRET);
+  razorpayCredentialProblems = validateRazorpayCredentials(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
+  razorpayConfigured = razorpayCredentialProblems.length === 0;
+  razorpayInstance = null;
+
+  if (razorpayConfigured) {
+    try {
+      razorpayInstance = new Razorpay({
+        key_id: RAZORPAY_KEY_ID,
+        key_secret: RAZORPAY_KEY_SECRET
+      });
+      console.log('[Razorpay] Initialized with live/test API keys.');
+    } catch (err) {
+      console.warn('[Razorpay] Initialization warning:', describeRazorpayError(err));
+    }
+  } else {
+    console.warn(`[Razorpay] ${razorpaySetupInstructions(razorpayCredentialProblems)}`);
   }
-} else {
-  console.log('[Razorpay] Configured with test environment credentials.');
 }
+
+configureRazorpay();
+
+// Reload .env in place when it changes, so new gateway keys take effect
+// immediately without needing a manual server restart.
+function watchEnvFile() {
+  if (!fs.existsSync(ENV_FILE)) return;
+  let reloadTimer = null;
+  try {
+    fs.watch(ENV_FILE, () => {
+      clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(() => {
+        try {
+          dotenv.config({ path: ENV_FILE, override: true });
+          configureRazorpay();
+          console.log('[Server] Reloaded configuration from .env');
+        } catch (err) {
+          console.warn('[Server] Could not reload .env:', err.message);
+        }
+      }, 250);
+    });
+  } catch (err) {
+    console.warn('[Server] Could not watch .env for changes:', err.message);
+  }
+}
+
+watchEnvFile();
 
 app.use(cors({
   origin: '*',
@@ -123,6 +164,13 @@ export function authenticateUser(req, res, next) {
     req.user = decoded;
     next();
   });
+}
+
+// Converts a Mongoose document (or a plain object from the in-memory store)
+// into a plain object so schema fields survive object spreading.
+function toPlain(doc) {
+  if (!doc) return doc;
+  return typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };
 }
 
 // Helper to look up authoritative room price & details from current published content
@@ -308,7 +356,7 @@ app.put('/api/user/profile', authenticateUser, async (req, res) => {
       updates.email = email.trim().toLowerCase();
     }
 
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, { returnDocument: 'after' });
     res.json({
       success: true,
       message: 'Profile updated successfully!',
@@ -403,7 +451,7 @@ app.get('/api/user/recent-views', authenticateUser, async (req, res) => {
 app.get('/api/cart', authenticateUser, async (req, res) => {
   try {
     const items = await CartItem.find({ user_id: req.user.id });
-    const formatted = (Array.isArray(items) ? items : []).map(i => ({ ...i, id: i._id }));
+    const formatted = (Array.isArray(items) ? items : []).map(i => ({ ...toPlain(i), id: i._id }));
     const totalAmount = formatted.reduce((acc, item) => acc + (Number(item.total_price) || 0), 0);
 
     res.json({
@@ -440,7 +488,7 @@ app.post('/api/cart', authenticateUser, async (req, res) => {
       stay_name: stay.name,
       room_name: room.name,
       price_per_night: room.price,
-      currency: stay.currency || 'USD',
+      currency: stay.currency || 'INR',
       check_in: defaultCheckIn,
       check_out: defaultCheckOut,
       nights,
@@ -450,13 +498,13 @@ app.post('/api/cart', authenticateUser, async (req, res) => {
     });
 
     const allItems = await CartItem.find({ user_id: req.user.id });
-    const formatted = allItems.map(i => ({ ...i, id: i._id }));
+    const formatted = allItems.map(i => ({ ...toPlain(i), id: i._id }));
     const totalAmount = formatted.reduce((acc, i) => acc + Number(i.total_price || 0), 0);
 
     res.json({
       success: true,
       message: `${stay.name} (${room.name}) added to your cart!`,
-      item: { ...cartItem, id: cartItem._id },
+      item: { ...toPlain(cartItem), id: cartItem._id },
       items: formatted,
       totalAmount
     });
@@ -491,16 +539,16 @@ app.put('/api/cart/:id', authenticateUser, async (req, res) => {
       guests: guestCount,
       price_per_night: room.price,
       total_price: totalPrice
-    });
+    }, { returnDocument: 'after' });
 
     const allItems = await CartItem.find({ user_id: req.user.id });
-    const formatted = allItems.map(i => ({ ...i, id: i._id }));
+    const formatted = allItems.map(i => ({ ...toPlain(i), id: i._id }));
     const totalAmount = formatted.reduce((acc, i) => acc + Number(i.total_price || 0), 0);
 
     res.json({
       success: true,
       message: 'Cart item updated.',
-      item: { ...updated, id: updated._id },
+      item: { ...toPlain(updated), id: updated._id },
       items: formatted,
       totalAmount
     });
@@ -520,7 +568,7 @@ app.delete('/api/cart/:id', authenticateUser, async (req, res) => {
 
     await CartItem.findByIdAndDelete(req.params.id);
     const allItems = await CartItem.find({ user_id: req.user.id });
-    const formatted = allItems.map(i => ({ ...i, id: i._id }));
+    const formatted = allItems.map(i => ({ ...toPlain(i), id: i._id }));
     const totalAmount = formatted.reduce((acc, i) => acc + Number(i.total_price || 0), 0);
 
     res.json({
@@ -552,9 +600,24 @@ app.delete('/api/cart', authenticateUser, async (req, res) => {
 // 1. Get Public Razorpay Configuration (Never expose Key Secret)
 app.get('/api/payments/config', (req, res) => {
   res.json({
-    keyId: RAZORPAY_KEY_ID,
-    currency: 'INR'
+    keyId: razorpayConfigured ? RAZORPAY_KEY_ID : '',
+    currency: 'INR',
+    paymentMode: razorpayConfigured ? 'razorpay' : 'simulation'
   });
+});
+
+// 1b. Admin: verify the configured Razorpay credentials against the gateway
+app.get('/api/admin/payments/verify-credentials', authenticateToken, async (req, res) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ success: false, ok: false, error: 'Admin access required.' });
+  }
+  try {
+    const result = await checkRazorpayCredentials(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Error] Verifying Razorpay credentials:', err);
+    res.status(500).json({ success: false, ok: false, error: err.message });
+  }
 });
 
 // 2. Create Order & Booking (Server-calculated price validation)
@@ -599,12 +662,13 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
     const primaryItem = bookingItems[0];
     const bookingRef = `ST-${Math.floor(100000 + Math.random() * 900000)}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
 
-    // Razorpay amount in subunits (paise for INR, or cents for USD)
-    // Convert to INR paise (approx 85 INR per USD if USD, or direct)
-    const amountInINR = Math.round(totalAmount * 85);
-    const amountInPaise = amountInINR * 100;
+    // Razorpay amount in subunits (paise). All prices are stored in INR.
+    const amountInPaise = Math.round(totalAmount) * 100;
 
     let razorpayOrderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    // The client only opens the live Razorpay widget for a real gateway order.
+    // Anything else falls back to the built-in simulation checkout.
+    let paymentMode = 'simulation';
 
     if (razorpayInstance) {
       try {
@@ -619,8 +683,9 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
           }
         });
         razorpayOrderId = rzpOrder.id;
+        paymentMode = 'razorpay';
       } catch (err) {
-        console.warn('[Razorpay API Error, using fallback order ID]:', err.message);
+        console.warn('[Razorpay API Error, using fallback order ID]:', describeRazorpayError(err));
       }
     }
 
@@ -642,9 +707,10 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
       guests: primaryItem.guests,
       price_per_night: primaryItem.price_per_night,
       total_amount: totalAmount,
-      currency: 'USD',
+      currency: 'INR',
       status: 'pending',
       payment_status: 'pending',
+      payment_mode: paymentMode,
       razorpay_order_id: razorpayOrderId
     });
 
@@ -656,7 +722,8 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
       amount: amountInPaise,
       displayAmount: totalAmount,
       currency: 'INR',
-      keyId: RAZORPAY_KEY_ID,
+      paymentMode,
+      keyId: paymentMode === 'razorpay' ? RAZORPAY_KEY_ID : '',
       customer: {
         name: userDoc?.name || req.user.name,
         email: userDoc?.email || req.user.email,
@@ -710,7 +777,7 @@ app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
       status: 'confirmed',
       payment_status: 'paid',
       razorpay_payment_id
-    });
+    }, { returnDocument: 'after' });
 
     // Store verified payment transaction record
     const paymentRecord = await Payment.create({
@@ -719,8 +786,8 @@ app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
       booking_id: booking._id,
       user_id: req.user.id,
       amount: booking.total_amount,
-      currency: booking.currency || 'USD',
-      payment_method: 'Razorpay Gateway',
+      currency: booking.currency || 'INR',
+      payment_method: booking.payment_mode === 'simulation' ? 'Simulated Test Gateway' : 'Razorpay Gateway',
       payment_status: 'successful',
       razorpay_order_id,
       razorpay_payment_id,
@@ -733,7 +800,7 @@ app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
     res.json({
       success: true,
       message: 'Payment verified successfully and booking confirmed!',
-      booking: { ...updatedBooking, id: updatedBooking._id },
+      booking: { ...toPlain(updatedBooking), id: updatedBooking._id },
       transaction: paymentRecord
     });
   } catch (err) {
@@ -746,7 +813,7 @@ app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
 app.get('/api/bookings', authenticateUser, async (req, res) => {
   try {
     const bookings = await Booking.find({ user_id: req.user.id });
-    const formatted = (Array.isArray(bookings) ? bookings : []).map(b => ({ ...b, id: b._id }));
+    const formatted = (Array.isArray(bookings) ? bookings : []).map(b => ({ ...toPlain(b), id: b._id }));
     res.json({ success: true, bookings: formatted });
   } catch (err) {
     console.error('[Error] Fetching bookings:', err);
@@ -761,7 +828,7 @@ app.get('/api/bookings/:id', authenticateUser, async (req, res) => {
     if (!booking || booking.user_id?.toString() !== req.user.id?.toString()) {
       return res.status(404).json({ error: 'Booking reservation not found.' });
     }
-    res.json({ success: true, booking: { ...booking, id: booking._id } });
+    res.json({ success: true, booking: { ...toPlain(booking), id: booking._id } });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load booking details.' });
   }
@@ -771,7 +838,7 @@ app.get('/api/bookings/:id', authenticateUser, async (req, res) => {
 app.get('/api/payments', authenticateUser, async (req, res) => {
   try {
     const payments = await Payment.find({ user_id: req.user.id });
-    const formatted = (Array.isArray(payments) ? payments : []).map(p => ({ ...p, id: p._id }));
+    const formatted = (Array.isArray(payments) ? payments : []).map(p => ({ ...toPlain(p), id: p._id }));
     res.json({ success: true, payments: formatted });
   } catch (err) {
     console.error('[Error] Fetching payments:', err);
@@ -790,7 +857,7 @@ app.get('/api/content/published', async (req, res) => {
     if (!doc || !doc.data) {
       return res.json(getDefaultSiteData());
     }
-    res.json(doc.data);
+    res.json(sanitiseContentFonts(doc.data));
   } catch (err) {
     console.error('[Error] Fetching published content:', err);
     res.json(getDefaultSiteData());
@@ -886,8 +953,8 @@ app.get('/api/admin/content/draft', authenticateToken, async (req, res) => {
     const publishedData = pubDoc?.data || getDefaultSiteData();
 
     res.json({
-      draft: draftData,
-      published: publishedData,
+      draft: sanitiseContentFonts(draftData),
+      published: sanitiseContentFonts(publishedData),
       updated_at: draftDoc ? draftDoc.updated_at : null,
       updated_by: draftDoc ? draftDoc.updated_by : null
     });
@@ -906,8 +973,8 @@ app.post('/api/admin/content/draft', authenticateToken, async (req, res) => {
 
     await SiteContent.findOneAndUpdate(
       { id: 'draft' },
-      { data, updated_at: new Date(), updated_by: req.user.username },
-      { upsert: true, new: true }
+      { data: sanitiseContentFonts(data), updated_at: new Date(), updated_by: req.user.username },
+      { upsert: true, returnDocument: 'after' }
     );
 
     res.json({ success: true, message: 'Draft saved successfully.' });
@@ -932,14 +999,14 @@ app.post('/api/admin/content/publish', authenticateToken, async (req, res) => {
 
     await SiteContent.findOneAndUpdate(
       { id: 'published' },
-      { data: contentToPublish, updated_at: new Date(), updated_by: req.user.username },
-      { upsert: true, new: true }
+      { data: sanitiseContentFonts(contentToPublish), updated_at: new Date(), updated_by: req.user.username },
+      { upsert: true, returnDocument: 'after' }
     );
 
     await SiteContent.findOneAndUpdate(
       { id: 'draft' },
-      { data: contentToPublish, updated_at: new Date(), updated_by: req.user.username },
-      { upsert: true, new: true }
+      { data: sanitiseContentFonts(contentToPublish), updated_at: new Date(), updated_by: req.user.username },
+      { upsert: true, returnDocument: 'after' }
     );
 
     await Revision.create({

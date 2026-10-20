@@ -273,14 +273,12 @@ export default function ThemeCustomizer({ theme, onChange, onReset }) {
                 Display & Heading Font Family
               </label>
               <select
-                value={theme.displayFont || 'Cinzel, serif'}
+                value={theme.displayFont || 'DM Sans, system-ui, sans-serif'}
                 onChange={(e) => update('displayFont', e.target.value)}
                 className="w-full bg-[#0a1711] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
               >
-                <option value="Cinzel, serif">Cinzel (Elegant Serif - Mountain Luxury)</option>
-                <option value="Playfair Display, serif">Playfair Display (Editorial Serif)</option>
+                <option value="DM Sans, system-ui, sans-serif">DM Sans (Clean & Warm Sans)</option>
                 <option value="Plus Jakarta Sans, sans-serif">Plus Jakarta Sans (Modern Clean Sans)</option>
-                <option value="Lora, serif">Lora (Warm Literary Serif)</option>
                 <option value="Inter, sans-serif">Inter (High Legibility Neo-Grotesque)</option>
                 <option value="system-ui, sans-serif">System Native Sans</option>
               </select>
@@ -297,7 +295,7 @@ export default function ThemeCustomizer({ theme, onChange, onReset }) {
               >
                 <option value="Inter, sans-serif">Inter (Modern & Highly Readable)</option>
                 <option value="Plus Jakarta Sans, sans-serif">Plus Jakarta Sans</option>
-                <option value="Geist, sans-serif">Geist</option>
+                <option value="Manrope, sans-serif">Manrope</option>
                 <option value="system-ui, sans-serif">System UI</option>
               </select>
             </div>

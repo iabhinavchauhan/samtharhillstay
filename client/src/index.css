@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -53,10 +53,10 @@ body {
 }
 
 .home-section { scroll-margin-top: 82px; }
-.display-font { font-family: 'Playfair Display', Georgia, serif; }
+.display-font { font-family: var(--display-font, 'DM Sans', system-ui, sans-serif); }
 .home-shell { width: min(1240px, calc(100% - 48px)); margin-inline: auto; }
 .section-kicker { color: #a48236; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
-.section-title { font-family: 'Playfair Display', Georgia, serif; color: var(--pine); font-size: clamp(32px, 4vw, 48px); line-height: 1.12; font-weight: 600; }
+.section-title { font-family: var(--display-font, 'DM Sans', system-ui, sans-serif); color: var(--pine); font-size: clamp(32px, 4vw, 48px); line-height: 1.12; font-weight: 600; }
 .homestay-section-title { max-width: 780px; font-size: clamp(38px, 4.8vw, 58px); line-height: 1.08; }
 .homestay-kicker { display: inline-flex; align-items: center; gap: 9px; border: 1px solid rgba(179, 144, 66, .38); border-radius: 999px; background: #f1ead7; padding: 9px 15px; color: #765c20; font-size: 13px; font-weight: 800; letter-spacing: .2em; box-shadow: 0 5px 16px rgba(83, 64, 21, .1); }
 .homestay-kicker::before { content: '✦'; color: #b39042; font-size: 14px; }

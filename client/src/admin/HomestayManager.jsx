@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
+import { CURRENCY_SYMBOL, formatPrice } from '../utils/currency';
 
 export default function HomestayManager({ content, onChange }) {
   const [selectedStayIndex, setSelectedStayIndex] = useState(0);
@@ -73,7 +74,7 @@ export default function HomestayManager({ content, onChange }) {
       amenities: ['Wi-Fi', 'Balcony', 'Breakfast Included'],
       attractions: ['Pine trails', 'Viewpoint'],
       priceStarting: 100,
-      currency: 'USD',
+      currency: 'INR',
       priceLabel: 'per night',
       badge: 'New Stay',
       rooms: [
@@ -141,7 +142,7 @@ export default function HomestayManager({ content, onChange }) {
           >
             <span>{stay.name}</span>
             <span className="text-[10px] opacity-80">
-              ({stay.currency === 'INR' ? '₹' : '$'}{stay.priceStarting})
+              ({formatPrice(stay.priceStarting)})
             </span>
           </button>
         ))}
@@ -218,14 +219,11 @@ export default function HomestayManager({ content, onChange }) {
             <div>
               <label className="block text-xs font-semibold text-white/70 mb-1">Currency</label>
               <select
-                value={currentStay.currency || 'USD'}
+                value={currentStay.currency || 'INR'}
                 onChange={(e) => updateStay('currency', e.target.value)}
                 className="w-full bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white"
               >
-                <option value="USD">USD ($)</option>
                 <option value="INR">INR (₹)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
               </select>
             </div>
 
@@ -319,7 +317,7 @@ export default function HomestayManager({ content, onChange }) {
                   <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-[#caa34b] font-bold">
-                        {currentStay.currency === 'INR' ? '₹' : '$'}
+                        {CURRENCY_SYMBOL}
                       </span>
                       <input
                         type="number"

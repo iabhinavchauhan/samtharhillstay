@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { fixMojibakeDeep, containsMojibake } from './utils/fixEncoding.js';
+import { sanitiseThemeFonts } from './utils/theme.js';
 
 let isMongoConnected = false;
 
@@ -99,6 +101,7 @@ const bookingSchema = new mongoose.Schema({
   payment_status: { type: String, default: 'paid' }, // 'paid', 'pending', 'failed'
   razorpay_order_id: { type: String, default: '' },
   razorpay_payment_id: { type: String, default: '' },
+  payment_mode: { type: String, default: 'razorpay' }, // 'razorpay' | 'simulation'
   created_at: { type: Date, default: Date.now }
 });
 
@@ -461,6 +464,107 @@ export const ContactSubmission = {
   }
 };
 
+/**
+ * Repairs any Windows-1252 mojibake already persisted in MongoDB so that
+ * legacy records render as clean English text instead of garbled symbols.
+ */
+async function repairStoredEncoding() {
+  try {
+    const siteContents = await MongoSiteContent.find({});
+    let repairedContent = 0;
+    for (const doc of siteContents) {
+      if (!containsMojibake(doc.data)) continue;
+      await MongoSiteContent.updateOne({ _id: doc._id }, { $set: { data: fixMojibakeDeep(doc.data) } });
+      repairedContent += 1;
+    }
+
+    const revisions = await MongoRevision.find({});
+    let repairedRevisions = 0;
+    for (const doc of revisions) {
+      if (!containsMojibake(doc.data)) continue;
+      await MongoRevision.updateOne({ _id: doc._id }, { $set: { data: fixMojibakeDeep(doc.data) } });
+      repairedRevisions += 1;
+    }
+
+    if (repairedContent || repairedRevisions) {
+      console.log(`[MongoDB] Repaired garbled characters in ${repairedContent} site content document(s) and ${repairedRevisions} revision(s).`);
+    }
+  } catch (err) {
+    console.warn('[MongoDB] Character repair skipped:', err.message);
+  }
+}
+
+/**
+ * Normalises legacy USD pricing records to INR so the whole site quotes rupees.
+ */
+async function normaliseStoredCurrency() {
+  try {
+    const siteContents = await MongoSiteContent.find({});
+    let repairedContent = 0;
+    for (const doc of siteContents) {
+      const homestays = doc.data?.homestays;
+      if (!Array.isArray(homestays)) continue;
+      let changed = false;
+      for (const stay of homestays) {
+        if (stay && stay.currency !== 'INR') {
+          stay.currency = 'INR';
+          changed = true;
+        }
+      }
+      if (!changed) continue;
+      await MongoSiteContent.updateOne({ _id: doc._id }, { $set: { data: doc.data } });
+      repairedContent += 1;
+    }
+
+    const [cart, booking, payment] = await Promise.all([
+      MongoCartItem.updateMany({ currency: { $ne: 'INR' } }, { $set: { currency: 'INR' } }),
+      MongoBooking.updateMany({ currency: { $ne: 'INR' } }, { $set: { currency: 'INR' } }),
+      MongoPayment.updateMany({ currency: { $ne: 'INR' } }, { $set: { currency: 'INR' } })
+    ]);
+
+    const total = repairedContent + (cart.modifiedCount || 0) + (booking.modifiedCount || 0) + (payment.modifiedCount || 0);
+    if (total) {
+      console.log(`[MongoDB] Normalised pricing currency to INR across ${total} record(s).`);
+    }
+  } catch (err) {
+    console.warn('[MongoDB] Currency normalisation skipped:', err.message);
+  }
+}
+
+/**
+ * Replaces any serif font stack stored in the theme with the site's sans-serif
+ * defaults, so persisted content can never reintroduce a serif typeface.
+ */
+async function normaliseStoredFonts() {
+  try {
+    let repaired = 0;
+
+    const siteContents = await MongoSiteContent.find({});
+    for (const doc of siteContents) {
+      if (!doc.data?.theme) continue;
+      const theme = sanitiseThemeFonts(doc.data.theme);
+      if (theme.fontFamily === doc.data.theme.fontFamily && theme.displayFont === doc.data.theme.displayFont) continue;
+      await MongoSiteContent.updateOne({ _id: doc._id }, { $set: { data: { ...doc.data, theme } } });
+      repaired += 1;
+    }
+
+    const revisions = await MongoRevision.find({});
+    for (const doc of revisions) {
+      if (!doc.data?.theme) continue;
+      const theme = sanitiseThemeFonts(doc.data.theme);
+      if (theme.fontFamily === doc.data.theme.fontFamily && theme.displayFont === doc.data.theme.displayFont) continue;
+      await MongoRevision.updateOne({ _id: doc._id }, { $set: { data: { ...doc.data, theme } } });
+      repaired += 1;
+    }
+
+    if (repaired) {
+      console.log(`[MongoDB] Normalised theme fonts to sans-serif in ${repaired} document(s).`);
+    }
+  } catch (err) {
+    console.warn('[MongoDB] Font normalisation skipped:', err.message);
+  }
+}
+
 export async function connectDb() {
   const uri = process.env.MONGODB_URI;
   if (uri && uri.trim()) {
@@ -491,6 +595,9 @@ export async function connectDb() {
         await MongoRevision.create({ data: defaultData, note: 'Initial default setup', created_by: 'system_init' });
         console.log('[MongoDB] Seeded default published, draft and base revision in MongoDB.');
       }
+      await repairStoredEncoding();
+      await normaliseStoredCurrency();
+      await normaliseStoredFonts();
       return;
     } catch (err) {
       console.warn('[MongoDB] Connection failed, using in-memory store:', err.message);
@@ -551,7 +658,7 @@ export async function connectDb() {
       guests: 2,
       price_per_night: 112,
       total_amount: 336,
-      currency: 'USD',
+      currency: 'INR',
       status: 'confirmed',
       payment_status: 'paid',
       razorpay_order_id: 'order_samp_91023',
@@ -568,7 +675,7 @@ export async function connectDb() {
       booking_id: sampleBookingId,
       user_id: sampleUserId,
       amount: 336,
-      currency: 'USD',
+      currency: 'INR',
       payment_method: 'Razorpay UPI',
       payment_status: 'successful',
       razorpay_order_id: 'order_samp_91023',
@@ -615,7 +722,7 @@ export function getDefaultSiteData() {
       backgroundColor: '#faf8f1',
       textColor: '#1b2b22',
       fontFamily: 'Inter, sans-serif',
-      displayFont: 'Cinzel, serif',
+      displayFont: 'DM Sans, system-ui, sans-serif',
       borderRadius: '20px',
       buttonRadius: '10px'
     },
@@ -797,7 +904,7 @@ export function getDefaultSiteData() {
         amenities: ['Private balconies', 'Fireplace seating', 'Organic breakfast', 'Guided forest walk'],
         attractions: ['Tea plantations', 'Sunrise viewpoints', 'Local spice market', 'Birdwatching trails'],
         priceStarting: 112,
-        currency: 'USD',
+        currency: 'INR',
         priceLabel: 'per night',
         badge: 'Popular Choice',
         rooms: [
@@ -828,7 +935,7 @@ export function getDefaultSiteData() {
         amenities: ['Heated floors', 'Evening tea service', 'Private garden', 'Guided village walk'],
         attractions: ['Local pottery village', 'Canyon overlooks', 'Herbal spa treatments', 'Sunset ridge'],
         priceStarting: 98,
-        currency: 'USD',
+        currency: 'INR',
         priceLabel: 'per night',
         badge: 'Valley Vista',
         rooms: [
@@ -859,7 +966,7 @@ export function getDefaultSiteData() {
         amenities: ['Private cedar deck', 'Wood stove heating', 'Himalayan breakfast', 'Forest trail access'],
         attractions: ['Duka Falls', 'Pine Ridge walk', 'Monastery view point'],
         priceStarting: 105,
-        currency: 'USD',
+        currency: 'INR',
         priceLabel: 'per night',
         badge: 'Peaceful Retreat',
         rooms: [

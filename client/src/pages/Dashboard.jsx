@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
+import { formatPrice } from '../utils/currency';
 import {
   User,
   ShoppingBag,
@@ -575,10 +576,10 @@ export default function Dashboard() {
 
                           <div className="flex items-center justify-between border-t border-[#eee8da] pt-2 text-xs">
                             <span className="text-[#59645a]">
-                              ${item.price_per_night} × {item.nights} {item.nights === 1 ? 'night' : 'nights'}
+                              {formatPrice(item.price_per_night)} × {item.nights} {item.nights === 1 ? 'night' : 'nights'}
                             </span>
                             <span className="font-bold text-sm text-[#10281e]">
-                              ${item.total_price}
+                              {formatPrice(item.total_price)}
                             </span>
                           </div>
                         </div>
@@ -593,7 +594,7 @@ export default function Dashboard() {
                   <div className="space-y-3 text-xs text-[#59645a] border-b border-[#eee8da] pb-4">
                     <div className="flex justify-between">
                       <span>Subtotal ({cart.length} stays)</span>
-                      <span className="font-semibold text-[#10281e]">${cartTotal}</span>
+                      <span className="font-semibold text-[#10281e]">{formatPrice(cartTotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Farm Breakfast & Local Dinners</span>
@@ -607,7 +608,7 @@ export default function Dashboard() {
 
                   <div className="flex justify-between items-baseline pt-1">
                     <span className="text-xs uppercase font-bold text-[#10281e]">Total Payable</span>
-                    <span className="display-font text-2xl font-bold text-[#10281e]">${cartTotal}</span>
+                      <span className="display-font text-2xl font-bold text-[#10281e]">{formatPrice(cartTotal)}</span>
                   </div>
 
                   <Link
@@ -657,7 +658,7 @@ export default function Dashboard() {
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         />
                         <span className="absolute bottom-3 left-3 rounded-md bg-[#10281e]/85 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
-                          ${stay.priceStarting} / night
+                          {formatPrice(stay.priceStarting)} / night
                         </span>
                       </div>
                       <div className="p-4 space-y-2">
@@ -729,7 +730,7 @@ export default function Dashboard() {
                           Dates: {booking.check_in} → {booking.check_out} ({booking.nights} nights)
                         </div>
                         <div className="font-semibold text-[#10281e]">
-                          Total Paid: ${booking.total_amount}
+                          Total Paid: {formatPrice(booking.total_amount)}
                         </div>
                       </div>
                       <Link
@@ -836,7 +837,7 @@ export default function Dashboard() {
                       <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
                         <div className="text-left sm:text-right">
                           <span className="block text-[10px] uppercase tracking-wider text-[#59645a]">Total Amount</span>
-                          <span className="display-font text-xl font-bold text-[#10281e]">${booking.total_amount}</span>
+                          <span className="display-font text-xl font-bold text-[#10281e]">{formatPrice(booking.total_amount)}</span>
                         </div>
                         <button
                           onClick={() => setSelectedBooking(booking)}
@@ -898,7 +899,7 @@ export default function Dashboard() {
                         <tr key={p.id} className="hover:bg-[#faf8f1] transition">
                           <td className="px-5 py-4 font-mono font-bold text-[#7a5e1c]">{p.transaction_id}</td>
                           <td className="px-5 py-4 font-semibold">{p.booking_ref}</td>
-                          <td className="px-5 py-4 font-bold text-sm">${p.amount} {p.currency}</td>
+                          <td className="px-5 py-4 font-bold text-sm">{formatPrice(p.amount)}</td>
                           <td className="px-5 py-4 text-[#59645a]">{p.payment_method || 'Razorpay'}</td>
                           <td className="px-5 py-4 text-[#59645a]">
                             {new Date(p.created_at).toLocaleString('en-US', {
@@ -994,7 +995,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex justify-between text-sm font-bold pt-2 border-t border-[#eee8da]">
                   <span className="text-[#10281e]">Total Paid</span>
-                  <span className="text-[#10281e]">${selectedBooking.total_amount} {selectedBooking.currency}</span>
+                  <span className="text-[#10281e]">{formatPrice(selectedBooking.total_amount)}</span>
                 </div>
               </div>
 

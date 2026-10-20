@@ -16,8 +16,10 @@ export default {
         soft: '0 24px 80px rgba(15, 23, 42, 0.16)',
       },
       fontFamily: {
-        serif: ['Playfair Display', 'serif'],
-        sans: ['Poppins', 'sans-serif'],
+        // The site is sans-serif only; the serif alias resolves to a sans stack
+        // so any remaining `font-serif` utility still renders sans-serif.
+        serif: ['DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'hero-gradient': 'linear-gradient(180deg, rgba(7,16,12,0.12), rgba(7,16,12,0.78))',

@@ -9,13 +9,13 @@
     html, body { margin: 0; padding: 0; background: #dedbd1; color: #203629; font-family: Arial, Helvetica, sans-serif; }
     .page { position: relative; width: 210mm; height: 297mm; margin: 0 auto 12mm; overflow: hidden; background: #faf8f1; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
-    .serif { font-family: Georgia, 'Times New Roman', serif; }
+    .display { font-family: Arial, Helvetica, sans-serif; font-weight: 600; letter-spacing: -0.5px; }
     .eyebrow { color: #b3914a; font-size: 9pt; font-weight: 700; letter-spacing: 2.6px; text-transform: uppercase; }
     .cover { background: #10281e; color: white; }
     .cover-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .cover-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,25,17,.1) 10%, rgba(8,25,17,.34) 42%, rgba(8,25,17,.88) 100%); }
     .cover-brand { position: absolute; top: 22mm; left: 20mm; display: flex; align-items: center; gap: 9px; font-size: 10pt; font-weight: 700; letter-spacing: 1px; }
-    .brand-mark { display: grid; width: 10mm; height: 10mm; place-items: center; border: 1px solid #d1b266; border-radius: 50%; color: #e5cb83; font-family: Georgia, serif; font-size: 17pt; }
+    .brand-mark { display: grid; width: 10mm; height: 10mm; place-items: center; border: 1px solid #d1b266; border-radius: 50%; color: #e5cb83; font-family: Arial, Helvetica, sans-serif; font-size: 17pt; }
     .cover-copy { position: absolute; right: 20mm; bottom: 28mm; left: 20mm; }
     .cover-copy .eyebrow { color: #e7cc83; }
     h1 { max-width: 160mm; margin: 7mm 0 5mm; font-size: 48pt; font-weight: 500; line-height: 1.02; }
@@ -35,7 +35,7 @@
     .day-card:first-child img { height: 68mm; }
     .day-copy { padding: 5mm 5.5mm 6mm; }
     .day-number { color: #a48236; font-size: 8pt; font-weight: 700; letter-spacing: 1.7px; }
-    h3 { margin: 2mm 0; color: #173528; font-family: Georgia, 'Times New Roman', serif; font-size: 19pt; font-weight: 500; }
+    h3 { margin: 2mm 0; color: #173528; font-family: Arial, Helvetica, sans-serif; font-size: 19pt; font-weight: 600; letter-spacing: -0.3px; }
     .day-copy p { margin: 2mm 0 0; color: #697168; font-size: 9pt; line-height: 1.6; }
     .note { margin-top: 7mm; color: #888a80; font-size: 8pt; font-style: italic; }
     .page3 { padding-bottom: 15mm; }
@@ -46,14 +46,14 @@
     .route p { margin: 1mm 0 0; color: #697168; font-size: 8.5pt; line-height: 1.55; }
     .stay-strip { margin-top: 8mm; padding: 6mm; border-radius: 4mm; background: #173528; color: white; }
     .stay-strip .eyebrow { color: #e4c875; }
-    .stay-names { display: flex; justify-content: space-between; gap: 3mm; margin-top: 4mm; font-family: Georgia, 'Times New Roman', serif; font-size: 13pt; }
+    .stay-names { display: flex; justify-content: space-between; gap: 3mm; margin-top: 4mm; font-family: Arial, Helvetica, sans-serif; font-size: 13pt; font-weight: 600; }
     .arrival { margin-top: 8mm; }
     .arrival h3 { font-size: 19pt; }
     .pickup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 6mm; margin-top: 4mm; }
     .pickup { display: flex; justify-content: space-between; border-bottom: 1px solid #e5dfd1; padding: 2.5mm 0; color: #405246; font-size: 8.5pt; }
     .pickup b { color: #173528; }
     .contact { display: flex; align-items: end; justify-content: space-between; gap: 8mm; margin-top: 9mm; border-top: 1px solid #d9d2c2; padding-top: 6mm; }
-    .contact strong { display: block; margin-top: 2mm; color: #173528; font-family: Georgia, 'Times New Roman', serif; font-size: 21pt; font-weight: 500; }
+    .contact strong { display: block; margin-top: 2mm; color: #173528; font-family: Arial, Helvetica, sans-serif; font-size: 21pt; font-weight: 600; letter-spacing: -0.3px; }
     .contact .right { color: #697168; font-size: 9pt; text-align: right; line-height: 1.7; }
     .bottom-line { position: absolute; right: 18mm; bottom: 8mm; left: 18mm; display: flex; justify-content: space-between; border-top: 1px solid #e5dfd1; padding-top: 3mm; color: #85867d; font-size: 7pt; letter-spacing: .8px; }
     @media print {
@@ -69,7 +69,7 @@
     <div class="cover-brand"><span class="brand-mark">S</span><span>SAMTHAR</span></div>
     <div class="cover-copy">
       <div class="eyebrow">A slower stay in the hills</div>
-      <h1 class="serif">Make room<br>for the mountains.</h1>
+      <h1 class="display">Make room<br>for the mountains.</h1>
       <div class="cover-lede">A village stay shaped by open skies, unhurried mornings and the warmth of local hosting.</div>
       <div class="cover-place"><span>Samthar</span><span>Kalimpong District · West Bengal</span></div>
       <div class="photo-note">Cover image is illustrative, not an actual property photograph.</div>
@@ -79,7 +79,7 @@
   <section class="page page-pad">
     <div class="page-head"><div class="small-brand">SAMTHAR &nbsp; / &nbsp; A DAY OUT HERE</div><div class="page-no">02</div></div>
     <div class="eyebrow">Follow your own rhythm</div>
-    <h2 class="serif">A day with space<br>to breathe.</h2>
+    <h2 class="display">A day with space<br>to breathe.</h2>
     <p class="intro">No packed itinerary needed. Let the hills set the pace: start with a view, take the path that catches your eye, and come back for something good to eat.</p>
     <div class="day-grid">
       <article class="day-card">
@@ -102,7 +102,7 @@
   <section class="page page-pad page3">
     <div class="page-head"><div class="small-brand">SAMTHAR &nbsp; / &nbsp; PLAN A LITTLE, WANDER A LOT</div><div class="page-no">03</div></div>
     <div class="eyebrow">A good place to begin</div>
-    <h2 class="serif">Choose a direction.<br>Keep your pace.</h2>
+    <h2 class="display">Choose a direction.<br>Keep your pace.</h2>
     <p class="intro">Use Samthar as a quieter base for the Eastern Himalayas. Pick one outing, leave room for the road, and ask your hosts about local conditions before setting off.</p>
     <div class="route-grid">
       <article class="route"><span>01 / Town & viewpoints</span><h3>Kalimpong</h3><p>Deolo Hill, Durpin Dara, Mangal Dham and the town's gardens and heritage corners.</p></article>

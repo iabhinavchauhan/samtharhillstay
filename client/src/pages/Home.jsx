@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext'
+import { formatPrice } from '../utils/currency'
 
 function compressReviewPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -147,19 +148,7 @@ export default function Home() {
     address: 'Mairung, Kalimpong Hills, West Bengal 734301'
   }
 
-  const stays = siteData?.homestays || [
-    {
-      name: 'SAMTHAR Hill-Stay',
-      location: 'Mairung, Kalimpong',
-      description: 'A peaceful village home with open cloud views, warm hosting and room to slow down.',
-      detail: 'Ideal for slow weekends, family escapes, and unhurried mornings with tea, clouds, and forest air.',
-      points: ['Quiet mountain village setting', 'Cloud views from the property', 'Camping and bonfire on request'],
-      mainImage: 'https://thepinegetaways.com/images/homestays/mairung.jpg',
-      priceStarting: 112,
-      currency: 'USD',
-      priceLabel: 'per night',
-    }
-  ]
+  const stays = siteData?.homestays || []
 
   const heroImages = hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=2200&q=85']
 
@@ -351,7 +340,7 @@ export default function Home() {
                       <p className="text-xs uppercase tracking-widest text-[#caa34b] font-bold">{stay.location}</p>
                       {stay.priceStarting && (
                         <span className="rounded-full bg-[#10281e]/10 px-3 py-1 text-xs font-bold text-[#10281e]">
-                          From {stay.currency === 'INR' ? '₹' : '$'}{stay.priceStarting} {stay.priceLabel || 'per night'}
+                          From {formatPrice(stay.priceStarting)} {stay.priceLabel || 'per night'}
                         </span>
                       )}
                     </div>
