@@ -14,7 +14,17 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 3000,
+    port: 5173,
     host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: process.env.API_PROXY_TARGET || 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: process.env.API_PROXY_TARGET || 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
+    },
   }
 });

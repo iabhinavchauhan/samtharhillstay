@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext'
 import { formatPrice } from '../utils/currency'
 import { homestays as defaultHomestays } from '../data/resortData'
@@ -52,6 +52,13 @@ function compressReviewPhoto(file) {
 
 export default function Home() {
   const { siteData, reviews, addReview } = useContext(ResortContext)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.pathname === '/' && location.hash === '#contact') {
+      requestAnimationFrame(() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }))
+    }
+  }, [location.pathname, location.hash])
 
   // Dynamic Content Fallbacks
   const hp = siteData?.homepage || {}
@@ -75,14 +82,19 @@ export default function Home() {
     heading: 'Why travellers love staying with us',
     subheading: 'Crafted with care, nature, and slow mountain comfort.',
     items: [
-      { title: 'Wake up to wide-open views', desc: 'Enjoy peaceful panoramas of forested slopes, rolling ridges and the valley beyond.' },
-      { title: 'A smooth journey to the hills', desc: 'Reach your stay by road from NJP, Bagdogra or Siliguri, with local pickup options available.' },
-      { title: 'Set out and explore', desc: 'Make a relaxed base for discovering Kalimpong, Sikkim and the winding Silk Route.' },
-      { title: 'Care that feels personal', desc: 'Enjoy home-cooked meals and a warm welcome from people who know the hills.' },
-      { title: 'Find your quieter corner', desc: 'Stay in peaceful village surroundings and take a break from the busy hill-station pace.' },
-      { title: 'Space to feel at home', desc: 'Settle into a comfortable stay suited to couples, families and groups.' },
+      { title: 'Wide-open views and quiet village stays', desc: 'Enjoy forested slopes, rolling ridges and peaceful village surroundings, with room to slow down and feel at home.' },
+      { title: 'An easy journey with plenty to explore', desc: 'Reach us from NJP, Bagdogra or Siliguri, then use your stay as a relaxed base for Kalimpong, Sikkim and the Silk Route.' },
+      { title: 'Personal care that feels like home', desc: 'Settle into a comfortable stay for couples, families or groups, with home-cooked meals and a warm welcome from local hosts.' },
     ]
   }
+
+  const reasonsItems = (reasonsData.items || []).length > 3
+    ? [
+        { title: 'Wide-open views and quiet village stays', desc: 'Enjoy forested slopes, rolling ridges and peaceful village surroundings, with room to slow down and feel at home.' },
+        { title: 'An easy journey with plenty to explore', desc: 'Reach us from NJP, Bagdogra or Siliguri, then use your stay as a relaxed base for Kalimpong, Sikkim and the Silk Route.' },
+        { title: 'Personal care that feels like home', desc: 'Settle into a comfortable stay for couples, families or groups, with home-cooked meals and a warm welcome from local hosts.' },
+      ]
+    : reasonsData.items || []
 
   const experiencesData = hp.experiences || {
     visible: true,
@@ -125,17 +137,6 @@ export default function Home() {
       { title: 'A slow sunrise together', type: 'Experiences', image: 'https://thepinegetaways.com/images/gallery/experiences-couple-sunrise.jpg' },
       { title: 'Peaks above the clouds', type: 'Views', image: 'https://thepinegetaways.com/images/gallery/views-clouds.jpg' },
       { title: 'A warm twin-bed room', type: 'Rooms', image: 'https://thepinegetaways.com/images/gallery/rooms-twin-bed.jpg' },
-    ]
-  }
-
-  const faqData = hp.faqSection || {
-    visible: true,
-    heading: 'Frequently Asked Questions',
-    subheading: 'Everything you need to know about planning your stay with us.',
-    faqs: [
-      { question: 'How do we reach Samthar from NJP or Bagdogra?', answer: 'We are situated approximately 3.5 to 4 hours scenic drive from NJP Railway Station and Bagdogra Airport. Private cabs and shared jeeps to Kalimpong can be arranged upon request.' },
-      { question: 'Can I book a private guided walk or village trek?', answer: 'Yes! Every homestay offers curated local walks, birdwatching trails, and village explorations guided by warm local hosts.' },
-      { question: 'Are meals included with the stay?', answer: 'We offer packages that include wholesome farm-to-table breakfast and hearty home-cooked Himalayan dinners.' },
     ]
   }
 
@@ -292,7 +293,7 @@ export default function Home() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <a
-                  href={hero.primaryButtonLink || '#contact'}
+                  href="/#contact"
                   className="rounded-full bg-[var(--accent-gold,#caa34b)] px-6 py-3 text-xs font-bold text-[#16281e] transition hover:bg-[var(--accent-gold-hover,#dfbc60)] shadow-lg"
                 >
                   {hero.primaryButtonText || 'Book Your Stay'} <span aria-hidden="true">→</span>
@@ -389,7 +390,7 @@ export default function Home() {
               <h2 className="section-title mt-3">{reasonsData.heading || 'Why guests love staying with us'}</h2>
             </div>
             <div className="grid gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
-              {(reasonsData.items || []).map((item, index) => (
+              {reasonsItems.map((item, index) => (
                 <article key={item.title || index} className="experience-item">
                   <p className="text-[10px] font-bold tracking-[.18em] text-[#b08d3b]">0{index + 1}</p>
                   <h3 className="display-font mt-2 text-xl font-semibold text-[#173528]">{item.title}</h3>
@@ -461,19 +462,19 @@ export default function Home() {
 
       {/* 6. ATTRACTION CLUSTERS */}
       {clustersData.visible !== false && (
-        <section className="home-shell attractions-section py-12 sm:py-16">
-          <div className="mb-6 max-w-2xl">
+        <section className="home-shell attractions-section py-9 sm:py-12">
+          <div className="mb-4 max-w-2xl">
             <p className="section-kicker">Regional Highlights</p>
-            <h2 className="section-title mt-2">Attraction Clusters Across Kalimpong & Sikkim</h2>
+            <h2 className="section-title attractions-heading mt-2">Attraction Clusters Across Kalimpong & Sikkim</h2>
           </div>
           <div className="attraction-grid">
             {(clustersData.clusters || []).map((cluster, index) => (
               <article key={cluster.title || index} className="attraction-card">
-                <div className="flex items-center gap-3">
-                  <span className="display-font grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#e5dbc0] bg-[#f5f0e1] text-[11px] font-bold text-[#9b782d]">
+                <div className="flex items-center gap-2.5">
+                  <span className="display-font grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#e5dbc0] bg-[#f5f0e1] text-[10px] font-bold text-[#9b782d]">
                     0{index + 1}
                   </span>
-                  <h3 className="text-sm font-bold leading-5 text-[#1b3527]">{cluster.title}</h3>
+                  <h3 className="text-[13px] font-bold leading-5 text-[#1b3527]">{cluster.title}</h3>
                 </div>
                 <ul className="attraction-list">
                   {(cluster.spots || []).map((place) => (
@@ -494,44 +495,35 @@ export default function Home() {
               <p className="section-kicker">{galleryData.subheading || 'A glimpse of hill life'}</p>
               <h2 className="section-title mt-2">{galleryData.heading || 'Moments from the Hills'}</h2>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
               {(galleryData.items || []).map((item, idx) => (
-                <div
+                <button
                   key={idx}
+                  type="button"
                   onClick={() => setActiveStayImage({ name: item.title, image: item.image })}
-                  className="rounded-xl overflow-hidden border border-[#e5dbc0] aspect-square relative group cursor-pointer"
+                  className="group flex min-h-56 w-full items-center gap-5 rounded-[28px] border border-[#e5dfd1] bg-[#fffdf8] p-5 text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md sm:gap-6 sm:p-7"
                 >
-                  <img src={item.image} alt={item.title} className="w-full h-full object-cover transition duration-300 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-3 transition">
-                    <p className="text-white text-xs font-semibold">{item.title}</p>
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-24 w-24 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
+                  />
+                  <div className="min-w-0">
+                    <span className="mb-4 grid h-11 w-11 place-items-center rounded-full border border-[#e1d5b3] bg-[#f7f2e5] text-xs font-bold tracking-wide text-[#9b782d]">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <h3 className="display-font text-xl font-semibold leading-tight text-[#173528] sm:text-2xl">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[#73766d]">
+                      {item.description || (item.type ? `${item.type} moments from our hillside stays.` : 'A glimpse of life in the hills.')}
+                    </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
         </section>
       )}
       
-      {/* 9. FAQ SECTION */}
-      {faqData.visible !== false && (
-        <section className="bg-[#f5f2e8] py-16 sm:py-20 border-t border-[#e9e3d7]">
-          <div className="home-shell max-w-4xl mx-auto">
-            <div className="text-center mb-10">
-              <p className="section-kicker">{faqData.subheading}</p>
-              <h2 className="section-title mt-2">{faqData.heading}</h2>
-            </div>
-            <div className="space-y-4">
-              {(faqData.faqs || []).map((faq, idx) => (
-                <div key={idx} className="bg-white border border-[#e5dbc0] rounded-2xl p-6 shadow-sm">
-                  <h3 className="font-bold text-base text-[#10281e]">{faq.question}</h3>
-                  <p className="mt-2 text-sm text-[#5d645f] leading-relaxed">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* 9. REVIEWS & TESTIMONIALS */}
       <section className="bg-[#10281e] text-white py-12 sm:py-16">
         <div className="home-shell">
@@ -550,13 +542,13 @@ export default function Home() {
                 <label className="review-label">Your city
                   <input className="review-input" value={reviewForm.location} onChange={(e) => setReviewForm({ ...reviewForm, location: e.target.value })} />
                 </label>
-                <label className="review-label sm:col-span-2">Which homestay did you visit?
+                <label className="review-label">Which homestay did you visit?
                   <select className="review-input" value={reviewForm.staySlug} onChange={(e) => setReviewForm({ ...reviewForm, staySlug: e.target.value })} required>
                     <option value="">Choose a homestay</option>
                     {stays.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
                   </select>
                 </label>
-                <div className="sm:col-span-2">
+                <div>
                   <span className="review-label">Your rating</span>
                   <div className="flex gap-1 mt-1">
                     {[1, 2, 3, 4, 5].map((val) => (

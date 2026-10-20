@@ -1,5 +1,5 @@
-import { useContext, useEffect, useMemo, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useContext, useEffect, useMemo, useRef, useState } from "react"
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { motion } from "framer-motion"
 import { ResortContext } from "../context/ResortContext"
 import { useUserAuth } from "../context/UserAuthContext"
@@ -10,8 +10,9 @@ import { Calendar, Users, ShoppingBag, Check, ArrowRight } from "lucide-react"
 export default function HomestayDetails() {
   const { slug } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { toggleWishlist, addRecentView, wishlist, reviews, homestays, foodItems } = useContext(ResortContext)
-  const { addToCart, recordRecentView, isAuthenticated } = useUserAuth()
+  const { addToCart, recordRecentView, isAuthenticated, loading: authLoading } = useUserAuth()
 
   const [selectedRoom, setSelectedRoom] = useState("")
   const [checkIn, setCheckIn] = useState(() => {
@@ -25,6 +26,8 @@ export default function HomestayDetails() {
   const [guests, setGuests] = useState(2)
   const [cartSuccess, setCartSuccess] = useState(false)
   const [cartError, setCartError] = useState("")
+  const [addingToCart, setAddingToCart] = useState(false)
+  const pendingCartHandled = useRef(false)
 
   const stay = useMemo(() => (homestays || []).find((item) => item.slug === slug), [homestays, slug])
   const stayMenu = useMemo(
@@ -62,58 +65,60 @@ export default function HomestayDetails() {
   }, [checkIn, checkOut])
 
   const calculatedTotal = useMemo(() => {
-    return (currentRoom?.price || 100) * nights
-  }, [currentRoom, nights])
+    return (currentRoom?.price || 100) * nights * guests
+  }, [currentRoom, nights, guests])
+
+  useEffect(() => {
+    const pendingCartItem = location.state?.pendingCartItem
+    if (authLoading || !isAuthenticated || !pendingCartItem || pendingCartHandled.current) return
+
+    pendingCartHandled.current = true
+    navigate(location.pathname, { replace: true, state: null })
+    setAddingToCart(true)
+    setCartError("")
+    addToCart(pendingCartItem)
+      .then(() => {
+        setCartSuccess(true)
+        setTimeout(() => setCartSuccess(false), 4000)
+      })
+      .catch((err) => setCartError(err.message || "Could not add stay to cart."))
+      .finally(() => setAddingToCart(false))
+  }, [addToCart, authLoading, isAuthenticated, location.pathname, location.state, navigate])
 
   const handleAddToCart = async () => {
+    if (addingToCart) return
     setCartError("")
-    if (!isAuthenticated) {
-      navigate("/login", { state: { from: { pathname: `/homestays/${stay.slug}` } } })
-      return
+    const cartItem = {
+      staySlug: stay.slug,
+      roomName: currentRoom.name,
+      checkIn,
+      checkOut,
+      guests
     }
-    try {
-      await addToCart({
-        staySlug: stay.slug,
-        roomName: currentRoom.name,
-        checkIn,
-        checkOut,
-        guests
-      })
-      setCartSuccess(true)
-      setTimeout(() => setCartSuccess(false), 4000)
-    } catch (err) {
-      setCartError(err.message || "Could not add stay to cart.")
-    }
-  }
-
-  const handleBookNow = () => {
-    const directPayload = {
-      stay_slug: stay.slug,
-      stay_name: stay.name,
-      room_name: currentRoom.name,
-      price_per_night: currentRoom.price,
-      check_in: checkIn,
-      check_out: checkOut,
-      nights,
-      guests,
-      total_price: calculatedTotal,
-      image: stay.mainImage || (stay.gallery && stay.gallery[0]) || ""
-    }
-
     if (!isAuthenticated) {
       navigate("/login", {
         state: {
           from: {
-            pathname: "/checkout",
-            state: { directStay: directPayload }
+            pathname: `/homestays/${stay.slug}`,
+            state: { pendingCartItem: cartItem }
           }
         }
       })
       return
     }
-
-    navigate("/checkout", { state: { directStay: directPayload } })
+    setAddingToCart(true)
+    try {
+      await addToCart(cartItem)
+      setCartSuccess(true)
+      setTimeout(() => setCartSuccess(false), 4000)
+    } catch (err) {
+      setCartError(err.message || "Could not add stay to cart.")
+    } finally {
+      setAddingToCart(false)
+    }
   }
+
+  const handleBookNow = () => navigate('/#contact')
 
   if (!stay) {
     return (
@@ -278,7 +283,7 @@ export default function HomestayDetails() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-[#10281e]">{formatPrice(room.price)}</p>
-                      <span className="text-[10px] text-[#6c7166]">/ night</span>
+                      <span className="text-[10px] text-[#6c7166]">/ guest / night</span>
                     </div>
                   </div>
                 </div>
@@ -287,8 +292,8 @@ export default function HomestayDetails() {
 
             <div className="mt-6 rounded-2xl bg-[#f4efdf] border border-[#caa34b]/30 p-4 space-y-1 text-xs">
               <div className="flex justify-between text-[#5d645f]">
-                <span>Rate ({nights} {nights === 1 ? 'night' : 'nights'})</span>
-                <span>{formatPrice(currentRoom?.price)} × {nights}</span>
+                <span>Rate ({nights} {nights === 1 ? 'night' : 'nights'} × {guests} {guests === 1 ? 'guest' : 'guests'})</span>
+                <span>{formatPrice(currentRoom?.price)} × {nights} nights × {guests} guests</span>
               </div>
               <div className="flex justify-between items-baseline pt-1 border-t border-[#e5dbc0] text-sm font-bold text-[#10281e]">
                 <span>Estimated Total</span>
@@ -314,15 +319,20 @@ export default function HomestayDetails() {
               </div>
             )}
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className={`mt-6 grid gap-3 ${isAuthenticated ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                  className="flex items-center justify-center gap-2 rounded-full border border-[#caa34b] bg-transparent px-4 py-3.5 text-xs font-semibold text-[#caa34b] transition hover:bg-[#caa34b]/10 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  {addingToCart ? "Adding…" : "Add to Cart"}
+                </button>
+              )}
               <button
-                onClick={handleAddToCart}
-                className="flex items-center justify-center gap-2 rounded-full border border-[#caa34b] bg-transparent px-4 py-3.5 text-xs font-semibold text-[#caa34b] transition hover:bg-[#caa34b]/10"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Add to Cart
-              </button>
-              <button
+                type="button"
                 onClick={handleBookNow}
                 className="flex items-center justify-center gap-2 rounded-full bg-[#caa34b] px-4 py-3.5 text-xs font-bold text-[#10281e] transition hover:bg-[#d8b85e] shadow-sm"
               >

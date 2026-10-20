@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
 import { formatPrice } from '../utils/currency';
 import {
@@ -41,6 +41,7 @@ export default function Dashboard() {
   } = useUserAuth();
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const activeTab = searchParams.get('tab') || 'profile';
   const navigate = useNavigate();
 
@@ -68,13 +69,15 @@ export default function Dashboard() {
 
   // Selected Booking Details Modal
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [cartBusyIds, setCartBusyIds] = useState([]);
+  const [cartActionError, setCartActionError] = useState('');
 
   // Redirect if unauthenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: '/dashboard' } } });
+      navigate('/login', { state: { from: { pathname: `${location.pathname}${location.search}` } } });
     }
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, location.pathname, location.search, navigate]);
 
   // Load active tab data
   useEffect(() => {
@@ -118,6 +121,19 @@ export default function Dashboard() {
 
   const handleTabChange = (tabId) => {
     setSearchParams({ tab: tabId });
+  };
+
+  const runCartAction = async (itemId, action) => {
+    if (cartBusyIds.includes(itemId)) return;
+    setCartActionError('');
+    setCartBusyIds((ids) => [...ids, itemId]);
+    try {
+      await action();
+    } catch (err) {
+      setCartActionError(err.message || 'Could not update your cart. Please try again.');
+    } finally {
+      setCartBusyIds((ids) => ids.filter((id) => id !== itemId));
+    }
   };
 
   const handleProfileSubmit = async (e) => {
@@ -473,6 +489,11 @@ export default function Dashboard() {
         {/* ==================================================== */}
         {activeTab === 'cart' && (
           <div className="space-y-6">
+            {cartActionError && (
+              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                {cartActionError}
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="display-font text-2xl font-bold text-[#10281e]">Saved Stays in Your Cart</h2>
@@ -530,8 +551,9 @@ export default function Dashboard() {
                               </span>
                             </div>
                             <button
-                              onClick={() => removeFromCart(item.id)}
-                              className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition"
+                              onClick={() => runCartAction(item.id, () => removeFromCart(item.id))}
+                              disabled={cartBusyIds.includes(item.id)}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
                               title="Remove stay"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -545,8 +567,9 @@ export default function Dashboard() {
                               <input
                                 type="date"
                                 value={item.check_in}
-                                onChange={(e) => updateCartItem(item.id, { checkIn: e.target.value })}
-                                className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e]"
+                                onChange={(e) => runCartAction(item.id, () => updateCartItem(item.id, { checkIn: e.target.value }))}
+                                disabled={cartBusyIds.includes(item.id)}
+                                className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e] disabled:opacity-60"
                               />
                             </div>
                             <div>
@@ -554,16 +577,18 @@ export default function Dashboard() {
                               <input
                                 type="date"
                                 value={item.check_out}
-                                onChange={(e) => updateCartItem(item.id, { checkOut: e.target.value })}
-                                className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e]"
+                                onChange={(e) => runCartAction(item.id, () => updateCartItem(item.id, { checkOut: e.target.value }))}
+                                disabled={cartBusyIds.includes(item.id)}
+                                className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e] disabled:opacity-60"
                               />
                             </div>
                             <div className="col-span-2 sm:col-span-1">
                               <label className="text-[10px] font-bold text-[#59645a] uppercase">Guests</label>
                               <select
                                 value={item.guests}
-                                onChange={(e) => updateCartItem(item.id, { guests: parseInt(e.target.value, 10) })}
-                                className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e]"
+                                onChange={(e) => runCartAction(item.id, () => updateCartItem(item.id, { guests: parseInt(e.target.value, 10) }))}
+                                disabled={cartBusyIds.includes(item.id)}
+                                className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e] disabled:opacity-60"
                               >
                                 {[1, 2, 3, 4, 5, 6].map((num) => (
                                   <option key={num} value={num}>
@@ -576,7 +601,7 @@ export default function Dashboard() {
 
                           <div className="flex items-center justify-between border-t border-[#eee8da] pt-2 text-xs">
                             <span className="text-[#59645a]">
-                              {formatPrice(item.price_per_night)} × {item.nights} {item.nights === 1 ? 'night' : 'nights'}
+                              {formatPrice(item.price_per_night)} × {item.nights} {item.nights === 1 ? 'night' : 'nights'} × {item.guests} {item.guests === 1 ? 'guest' : 'guests'}
                             </span>
                             <span className="font-bold text-sm text-[#10281e]">
                               {formatPrice(item.total_price)}

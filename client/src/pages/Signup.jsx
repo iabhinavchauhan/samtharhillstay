@@ -38,7 +38,7 @@ export default function Signup() {
 
     try {
       await signup(name, email, password, phone);
-      navigate(from, { replace: true });
+      navigate(from, { replace: true, state: location.state?.from?.state });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

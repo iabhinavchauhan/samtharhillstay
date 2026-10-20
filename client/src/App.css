@@ -227,7 +227,6 @@ body {
 .card p,
 .detail-card p,
 .detail-card li,
-.faq-answer,
 .success-msg,
 body,
 button,
@@ -275,7 +274,6 @@ a {
 .card p,
 .detail-card p,
 .detail-card li,
-.faq-answer,
 .success-msg,
 body,
 button,
@@ -682,28 +680,6 @@ a {
   background: #ffffff;
   color: var(--color-text-primary);
   margin-bottom: 10px;
-}
-
-.faq-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.faq-item {
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: rgba(255,255,255,0.92);
-}
-
-.faq-question {
-  border: none;
-  background: transparent;
-  color: var(--color-text-primary);
-  text-align: left;
-  width: 100%;
-  cursor: pointer;
-  padding: 0;
 }
 
 .compare-table {

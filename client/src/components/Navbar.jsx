@@ -111,23 +111,25 @@ export default function Navbar() {
         {/* Action Buttons: Cart, User Auth, Brochure, Admin */}
         <div className="hidden items-center gap-2 sm:flex">
           {/* Cart Indicator with Badge */}
-          <Link
-            to="/dashboard?tab=cart"
-            title="My Cart"
-            className={`relative flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-[11px] font-semibold transition ${
-              isHome
-                ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
-                : 'border-[#d8d2c5] text-[#324239] hover:bg-[#eeeadc]'
-            }`}
-          >
-            <ShoppingBag className="h-4 w-4 text-[#caa34b]" />
-            <span className="hidden xl:inline">Cart</span>
-            {cartCount > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#caa34b] text-[9px] font-bold text-[#10281e]">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {isAuthenticated && (
+            <Link
+              to="/dashboard?tab=cart"
+              title="My Cart"
+              className={`relative flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-[11px] font-semibold transition ${
+                isHome
+                  ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                  : 'border-[#d8d2c5] text-[#324239] hover:bg-[#eeeadc]'
+              }`}
+            >
+              <ShoppingBag className="h-4 w-4 text-[#caa34b]" />
+              <span className="hidden xl:inline">Cart</span>
+              {cartCount > 0 && (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#caa34b] text-[9px] font-bold text-[#10281e]">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Combined Account: User Sign In / Sign Up + Admin Portal */}
           <div className="relative" ref={dropdownRef}>
@@ -261,7 +263,7 @@ export default function Navbar() {
           </a>
 
           <a
-            href={nav.ctaLink || "/#contact"}
+            href="/#contact"
             className="rounded-[10px] bg-[var(--accent-gold,#caa34b)] px-3.5 py-2 text-[11px] font-semibold text-[#17291e] transition hover:bg-[var(--accent-gold-hover,#d8b85e)]"
           >
             {nav.ctaText || 'Book Your Stay'}
@@ -307,19 +309,21 @@ export default function Navbar() {
           ))}
 
           {/* Mobile Cart & Account Links */}
-          <Link
-            to="/dashboard?tab=cart"
-            className="col-span-2 flex items-center justify-between rounded-lg bg-[#caa34b]/15 px-3 py-2.5 text-sm font-semibold text-[#caa34b]"
-            onClick={() => setOpen(false)}
-          >
-            <span className="flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4" />
-              <span>My Cart</span>
-            </span>
-            <span className="rounded-full bg-[#caa34b] px-2 py-0.5 text-xs text-[#10281e]">
-              {cartCount}
-            </span>
-          </Link>
+          {isAuthenticated && (
+            <Link
+              to="/dashboard?tab=cart"
+              className="col-span-2 flex items-center justify-between rounded-lg bg-[#caa34b]/15 px-3 py-2.5 text-sm font-semibold text-[#caa34b]"
+              onClick={() => setOpen(false)}
+            >
+              <span className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4" />
+                <span>My Cart</span>
+              </span>
+              <span className="rounded-full bg-[#caa34b] px-2 py-0.5 text-xs text-[#10281e]">
+                {cartCount}
+              </span>
+            </Link>
+          )}
 
           {isAuthenticated && user ? (
             <Link
@@ -362,7 +366,7 @@ export default function Navbar() {
           </a>
 
           <a
-            href={nav.ctaLink || "/#contact"}
+            href="/#contact"
             className="col-span-2 rounded-[10px] bg-[var(--accent-gold,#caa34b)] px-3 py-3 text-center text-sm font-semibold text-[#17291e]"
             onClick={() => setOpen(false)}
           >

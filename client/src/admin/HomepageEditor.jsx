@@ -47,7 +47,7 @@ export default function HomepageEditor({ content, onChange }) {
   };
 
   // Section Ordering & Visibility
-  const sectionsOrder = homepage.sectionsOrder || [
+  const sectionsOrder = (homepage.sectionsOrder || [
     'hero',
     'stays',
     'reasons',
@@ -55,9 +55,8 @@ export default function HomepageEditor({ content, onChange }) {
     'destinations',
     'clusters',
     'gallery',
-    'faq',
     'contact'
-  ];
+  ]).filter((section) => section !== 'faq');
 
   const moveSection = (idx, dir) => {
     const targetIdx = idx + dir;
@@ -532,69 +531,6 @@ export default function HomepageEditor({ content, onChange }) {
                     updateHp('destinations', 'items', updated);
                   }}
                   className="w-full bg-[#10281e] border border-white/10 rounded-lg px-2.5 py-1 text-[11px] text-white/60"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 5. FAQ SECTION */}
-      {activeSectionKey === 'faq' && (
-        <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <h3 className="text-base font-bold text-white">Frequently Asked Questions (FAQ)</h3>
-            <button
-              type="button"
-              onClick={() => {
-                const faqs = homepage.faqSection?.faqs || [];
-                updateHp('faqSection', 'faqs', [
-                  ...faqs,
-                  { question: 'What is checkout time?', answer: 'Check-in is at 1:00 PM and check-out is at 11:00 AM.' }
-                ]);
-              }}
-              className="px-3 py-1.5 bg-[#caa34b] text-[#10281e] font-semibold text-xs rounded-lg flex items-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add FAQ
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {(homepage.faqSection?.faqs || []).map((f, idx) => (
-              <div key={idx} className="bg-[#0a1711] p-4 rounded-xl border border-white/10 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-[#caa34b]">Question #{idx + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = homepage.faqSection.faqs.filter((_, i) => i !== idx);
-                      updateHp('faqSection', 'faqs', updated);
-                    }}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={f.question}
-                  onChange={(e) => {
-                    const updated = [...homepage.faqSection.faqs];
-                    updated[idx].question = e.target.value;
-                    updateHp('faqSection', 'faqs', updated);
-                  }}
-                  className="w-full bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-medium"
-                />
-                <textarea
-                  rows={2}
-                  value={f.answer}
-                  onChange={(e) => {
-                    const updated = [...homepage.faqSection.faqs];
-                    updated[idx].answer = e.target.value;
-                    updateHp('faqSection', 'faqs', updated);
-                  }}
-                  className="w-full bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/80"
                 />
               </div>
             ))}

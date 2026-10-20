@@ -772,7 +772,7 @@ export function getDefaultSiteData() {
       destinations: ['Darjeeling', 'Sikkim', 'Silk Route', 'Kalimpong Town', 'Lava & Rishyap']
     },
     homepage: {
-      sectionsOrder: ['hero', 'stays', 'reasons', 'experiences', 'destinations', 'clusters', 'gallery', 'reviews', 'faq', 'contact'],
+      sectionsOrder: ['hero', 'stays', 'reasons', 'experiences', 'destinations', 'clusters', 'gallery', 'reviews', 'contact'],
       hero: {
         visible: true,
         tagline: 'OFFBEAT KALIMPONG · SLOW RETREATS',
@@ -795,12 +795,9 @@ export function getDefaultSiteData() {
         heading: 'Why travellers love staying with us',
         subheading: 'Crafted with care, nature, and slow mountain comfort.',
         items: [
-          { title: 'Wake up to wide-open views', desc: 'Enjoy peaceful panoramas of forested slopes, rolling ridges and the valley beyond.' },
-          { title: 'A smooth journey to the hills', desc: 'Reach your stay by road from NJP, Bagdogra or Siliguri, with local pickup options available.' },
-          { title: 'Set out and explore', desc: 'Make a relaxed base for discovering Kalimpong, Sikkim and the winding Silk Route.' },
-          { title: 'Care that feels personal', desc: 'Enjoy home-cooked meals and a warm welcome from people who know the hills.' },
-          { title: 'Find your quieter corner', desc: 'Stay in peaceful village surroundings and take a break from the busy hill-station pace.' },
-          { title: 'Space to feel at home', desc: 'Settle into a comfortable stay suited to couples, families and groups.' }
+          { title: 'Wide-open views and quiet village stays', desc: 'Enjoy forested slopes, rolling ridges and peaceful village surroundings, with room to slow down and feel at home.' },
+          { title: 'An easy journey with plenty to explore', desc: 'Reach us from NJP, Bagdogra or Siliguri, then use your stay as a relaxed base for Kalimpong, Sikkim and the Silk Route.' },
+          { title: 'Personal care that feels like home', desc: 'Settle into a comfortable stay for couples, families or groups, with home-cooked meals and a warm welcome from local hosts.' }
         ]
       },
       experiences: {
@@ -872,18 +869,6 @@ export function getDefaultSiteData() {
           { title: 'Porch time in Pradhan Gaon', type: 'Experiences', image: 'https://thepinegetaways.com/images/gallery/experiences-porch-chat.jpg' }
         ]
       },
-      faqSection: {
-        visible: true,
-        heading: 'Frequently Asked Questions',
-        subheading: 'Everything you need to know about planning your stay with us.',
-        faqs: [
-          { question: 'How do we reach Samthar from NJP or Bagdogra?', answer: 'We are situated approximately 3.5 to 4 hours scenic drive from NJP Railway Station and Bagdogra Airport. Private cabs and shared jeeps to Kalimpong can be arranged upon request.' },
-          { question: 'Can I book a private guided walk or village trek?', answer: 'Yes! Every homestay offers curated local walks, birdwatching trails, and village explorations guided by warm local hosts.' },
-          { question: 'Are meals included with the stay?', answer: 'We offer packages that include wholesome farm-to-table breakfast and hearty home-cooked Himalayan dinners.' },
-          { question: 'Is there high-speed Wi-Fi available?', answer: 'Yes, reliable Wi-Fi is available across our properties so you can work remotely while staying immersed in quiet nature.' },
-          { question: 'What is the best season to visit?', answer: 'September to May offers clear blue skies and breathtaking snow peak views. The monsoons (June to August) bring lush greenery, mist, and quiet romance.' }
-        ]
-      }
     },
     homestays: [
       {

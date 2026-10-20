@@ -300,21 +300,6 @@ export const foodItems = [
 
 export const initialReviews = []
 
-export const faqs = [
-  {
-    question: 'Can I book a private guided walk?',
-    answer: 'Yes, every homestay offers curated local walks tailored to your pace and interests.',
-  },
-  {
-    question: 'Are meals included with the stay?',
-    answer: 'Most bookable packages include breakfast and dinner with seasonal local dishes.',
-  },
-  {
-    question: 'Is there Wi-Fi in the rooms?',
-    answer: 'Yes, complimentary Wi-Fi is available throughout the property, while the focus remains on nature and calm.',
-  },
-]
-
 export const attractions = [
   'Tea garden viewpoints',
   'Riverbank picnic sites',

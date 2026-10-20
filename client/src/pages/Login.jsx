@@ -24,18 +24,12 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate(from, { replace: true });
+      navigate(from, { replace: true, state: location.state?.from?.state });
     } catch (err) {
       setError(err.message || 'Failed to sign in. Please verify your email and password.');
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleDemoFill = () => {
-    setEmail('traveler@samthar.com');
-    setPassword('password123');
-    setError('');
   };
 
   return (
@@ -191,16 +185,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={handleDemoFill}
-              className="w-full rounded-xl border border-dashed border-[#caa34b] bg-[#1a241c]/40 py-2 text-xs font-semibold text-[#caa34b] transition hover:bg-[#caa34b]/20"
-            >
-              Fill Demo Credentials (traveler@samthar.com)
-            </button>
-          </div>
 
           <div className="border-t border-white/10 pt-6 text-center text-xs text-white/50">
             Don't have an account yet?{' '}

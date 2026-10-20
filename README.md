@@ -39,7 +39,7 @@ The frontend Vite server runs at `http://localhost:5173`.
 1. **Dashboard Overview**: Metrics overview, active homestays, menu items, and quick launchpads.
 2. **Homepage Sections & Builder**:
    - Manage Hero title, taglines, subheadings, and slideshow images.
-   - Reorder and toggle sections (Hero, Homestays, Reasons, Experiences, Destinations, Clusters, Gallery, FAQs, Contact).
+   - Reorder and toggle sections (Hero, Homestays, Reasons, Experiences, Destinations, Clusters, Gallery, Contact).
    - Edit feature benefits, curated experiences, and attraction clusters.
 3. **Homestays & Pricing Management**:
    - Add, edit, and delete homestays.

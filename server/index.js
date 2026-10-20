@@ -209,6 +209,10 @@ function calculateNights(checkIn, checkOut) {
   return isNaN(nights) ? 1 : nights;
 }
 
+function calculateStayTotal(pricePerNight, nights, guests) {
+  return Number(pricePerNight || 0) * Math.max(1, Number(nights) || 1) * Math.max(1, Number(guests) || 1);
+}
+
 // -------------------------------------------------------------
 // USER CUSTOMER AUTHENTICATION ENDPOINTS
 // -------------------------------------------------------------
@@ -451,7 +455,17 @@ app.get('/api/user/recent-views', authenticateUser, async (req, res) => {
 app.get('/api/cart', authenticateUser, async (req, res) => {
   try {
     const items = await CartItem.find({ user_id: req.user.id });
-    const formatted = (Array.isArray(items) ? items : []).map(i => ({ ...toPlain(i), id: i._id }));
+    const formatted = await Promise.all((Array.isArray(items) ? items : []).map(async (i) => {
+      const item = toPlain(i);
+      const { room } = await getAuthoritativeStayAndRoom(item.stay_slug, item.room_name);
+      const nights = calculateNights(item.check_in, item.check_out);
+      const guests = Math.max(1, Number(item.guests) || 1);
+      const total_price = calculateStayTotal(room.price, nights, guests);
+      if (item.nights !== nights || item.guests !== guests || Number(item.total_price) !== total_price || Number(item.price_per_night) !== Number(room.price)) {
+        await CartItem.findByIdAndUpdate(item._id, { nights, guests, total_price, price_per_night: room.price });
+      }
+      return { ...item, nights, guests, total_price, price_per_night: room.price, id: i._id };
+    }));
     const totalAmount = formatted.reduce((acc, item) => acc + (Number(item.total_price) || 0), 0);
 
     res.json({
@@ -480,7 +494,7 @@ app.post('/api/cart', authenticateUser, async (req, res) => {
     const defaultCheckOut = checkOut || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
     const nights = calculateNights(defaultCheckIn, defaultCheckOut);
     const guestCount = Math.max(1, parseInt(guests || 2, 10));
-    const totalPrice = room.price * nights;
+    const totalPrice = calculateStayTotal(room.price, nights, guestCount);
 
     const cartItem = await CartItem.create({
       user_id: req.user.id,
@@ -530,7 +544,7 @@ app.put('/api/cart/:id', authenticateUser, async (req, res) => {
 
     // Recalculate price using authoritative room price
     const { room } = await getAuthoritativeStayAndRoom(item.stay_slug, item.room_name);
-    const totalPrice = room.price * nights;
+    const totalPrice = calculateStayTotal(room.price, nights, guestCount);
 
     const updated = await CartItem.findByIdAndUpdate(req.params.id, {
       check_in: newCheckIn,
@@ -631,7 +645,15 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
       if (!cartItems || cartItems.length === 0) {
         return res.status(400).json({ error: 'Your cart is empty. Please choose a homestay first.' });
       }
-      bookingItems = cartItems;
+      bookingItems = await Promise.all(cartItems.map(async (item) => {
+        const data = toPlain(item);
+        const { room } = await getAuthoritativeStayAndRoom(data.stay_slug, data.room_name);
+        const nights = calculateNights(data.check_in, data.check_out);
+        const guests = Math.max(1, Number(data.guests) || 1);
+        const total_price = calculateStayTotal(room.price, nights, guests);
+        await CartItem.findByIdAndUpdate(data._id, { nights, guests, price_per_night: room.price, total_price });
+        return { ...data, nights, guests, price_per_night: room.price, total_price };
+      }));
     } else {
       if (!staySlug) {
         return res.status(400).json({ error: 'staySlug is required.' });
@@ -641,7 +663,7 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
       const defaultCheckOut = checkOut || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
       const nights = calculateNights(defaultCheckIn, defaultCheckOut);
       const guestCount = Math.max(1, parseInt(guests || 2, 10));
-      const totalPrice = room.price * nights;
+      const totalPrice = calculateStayTotal(room.price, nights, guestCount);
 
       bookingItems = [{
         stay_slug: stay.slug,
