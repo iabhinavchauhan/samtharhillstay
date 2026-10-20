@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext'
 import { formatPrice } from '../utils/currency'
+import { homestays as defaultHomestays } from '../data/resortData'
 
 function compressReviewPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -148,7 +149,7 @@ export default function Home() {
     address: 'Mairung, Kalimpong Hills, West Bengal 734301'
   }
 
-  const stays = siteData?.homestays || []
+  const stays = (siteData?.homestays && siteData.homestays.length >= 3) ? siteData.homestays : defaultHomestays
 
   const heroImages = hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=2200&q=85']
 
