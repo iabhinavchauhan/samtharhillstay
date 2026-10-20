@@ -877,12 +877,15 @@ app.get('/api/content/published', async (req, res) => {
   try {
     const doc = await SiteContent.findOne({ id: 'published' }).lean();
     if (!doc || !doc.data) {
-      return res.json(getDefaultSiteData());
+      return res.status(200).type('application/json').json(getDefaultSiteData());
     }
-    res.json(sanitiseContentFonts(doc.data));
+    res.status(200).type('application/json').json(sanitiseContentFonts(doc.data));
   } catch (err) {
     console.error('[Error] Fetching published content:', err);
-    res.json(getDefaultSiteData());
+    res.status(503).type('application/json').json({
+      success: false,
+      error: 'Published site content is temporarily unavailable.'
+    });
   }
 });
 
@@ -1284,16 +1287,20 @@ app.get('/api/admin/inquiries', authenticateToken, async (req, res) => {
 });
 
 // Database error handling
+app.use('/api', (req, res) => {
+  res.status(404).type('application/json').json({
+    success: false,
+    error: `API route not found: ${req.method} ${req.path}`
+  });
+});
+
 app.use((err, req, res, next) => {
   if (err.name === 'MongooseError' || err.name === 'MongoNetworkError' || (err.message && err.message.includes('buffering timed out'))) {
     console.warn('[AI Studio] Database offline — returning fallback');
-    if (req.method === 'GET') {
-      return res.json(req.path.endsWith('s') || req.path.endsWith('s/') ? [] : {});
-    }
-    return res.status(503).json({ error: 'Database service offline' });
+    return res.status(503).type('application/json').json({ error: 'Database service offline' });
   }
   console.error('[Server Error]:', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
+  res.status(500).type('application/json').json({ error: err.message || 'Internal server error' });
 });
 
 export async function startServer(port = PORT) {

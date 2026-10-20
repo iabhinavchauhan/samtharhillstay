@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext'
 import { formatPrice } from '../utils/currency'
+import { apiFetch } from '../utils/api'
 import { homestays as defaultHomestays } from '../data/resortData'
 
 function compressReviewPhoto(file) {
@@ -196,7 +197,7 @@ export default function Home() {
 
     // Post to persistent database backend
     try {
-      await fetch('/api/contact', {
+      await apiFetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -275,6 +276,8 @@ export default function Home() {
             key={heroImageIndex}
             src={heroImages[heroImageIndex]}
             alt="Mountain landscape around Samthar"
+            fetchPriority="high"
+            decoding="async"
             className="hero-background-image pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
           />
           <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#10281e]/85 via-[#10281e]/30 to-[#10281e]/10" aria-hidden="true" />
@@ -333,7 +336,7 @@ export default function Home() {
                     onClick={() => setActiveStayImage({ name: stay.name, image: stay.mainImage || stay.image })}
                     aria-label={`Open photo of ${stay.name}`}
                   >
-                    <img src={stay.mainImage || stay.image} alt={stay.name} className="home-image transition duration-500 group-hover:scale-105" />
+                    <img src={stay.mainImage || stay.image} alt={stay.name} loading="lazy" decoding="async" className="home-image transition duration-500 group-hover:scale-105" />
                   </button>
                 </div>
                 <div className="stay-content flex flex-col justify-between">
@@ -413,7 +416,7 @@ export default function Home() {
             {(experiencesData.items || []).map((exp, idx) => (
               <div key={idx} className="rounded-2xl border border-[#e5dbc0] bg-white overflow-hidden shadow-sm group">
                 <div className="h-48 overflow-hidden relative">
-                  <img src={exp.image} alt={exp.alt || exp.title} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                  <img src={exp.image} alt={exp.alt || exp.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                   <span className="absolute top-3 left-3 bg-[#10281e]/80 text-[#caa34b] font-mono font-bold text-xs px-2.5 py-1 rounded-lg backdrop-blur-sm">
                     {exp.number || `0${idx + 1}`}
                   </span>
@@ -440,7 +443,7 @@ export default function Home() {
               {(destinationsData.items || []).map((dest, idx) => (
                 <div key={idx} className="rounded-2xl border border-[#e5dbc0] bg-white overflow-hidden shadow-sm">
                   <div className="h-44 overflow-hidden">
-                    <img src={dest.image} alt={dest.name} className="w-full h-full object-cover" />
+                    <img src={dest.image} alt={dest.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </div>
                   <div className="p-5 space-y-3">
                     <h3 className="display-font text-lg font-bold text-[#10281e]">{dest.name}</h3>
@@ -506,6 +509,8 @@ export default function Home() {
                   <img
                     src={item.image}
                     alt={item.title}
+                    loading="lazy"
+                    decoding="async"
                     className="h-24 w-24 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
                   />
                   <div className="min-w-0">

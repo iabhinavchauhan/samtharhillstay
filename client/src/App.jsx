@@ -1,27 +1,39 @@
+import { lazy, Suspense, useContext } from 'react'
 import { BrowserRouter, Route, Routes, Navigate, Outlet } from 'react-router-dom'
 import { ResortProvider } from './context/ResortContext'
 import { AuthProvider } from './admin/AuthContext'
 import { UserAuthProvider } from './context/UserAuthContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import Home from './pages/Home'
-import Homestays from './pages/Homestays'
-import HomestayDetails from './pages/HomestayDetails'
-import Gallery from './pages/Gallery'
-import Reviews from './pages/Reviews'
-import Contact from './pages/Contact'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Dashboard from './pages/Dashboard'
-import Checkout from './pages/Checkout'
-import NotFound from './pages/NotFound'
-import AdminDashboard from './admin/AdminDashboard'
+const Home = lazy(() => import('./pages/Home'))
+const Homestays = lazy(() => import('./pages/Homestays'))
+const HomestayDetails = lazy(() => import('./pages/HomestayDetails'))
+const Gallery = lazy(() => import('./pages/Gallery'))
+const Reviews = lazy(() => import('./pages/Reviews'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const AdminDashboard = lazy(() => import('./admin/AdminDashboard'))
 import './index.css'
+import { ResortContext } from './context/ResortContext'
 
 function PublicLayout() {
+  const { siteData, siteDataError, retrySiteData } = useContext(ResortContext)
+
   return (
     <div className="min-h-screen bg-[var(--site-bg,#faf8f1)] text-[var(--site-text,#1b2b22)]">
       <Navbar />
+      {siteDataError && (
+        <div role="alert" className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 text-xs text-amber-950">
+          <span>
+            Latest published content could not be loaded. {siteData ? 'Showing the last successfully loaded version.' : 'Showing built-in fallback content.'}
+          </span>
+          <button type="button" onClick={retrySiteData} className="shrink-0 font-bold underline">Retry</button>
+        </div>
+      )}
       <main className="relative">
         <Outlet />
       </main>
@@ -36,6 +48,7 @@ function App() {
       <AuthProvider>
         <UserAuthProvider>
           <ResortProvider>
+            <Suspense fallback={<div className="grid min-h-[60vh] place-items-center bg-[var(--site-bg,#faf8f1)] text-sm text-[var(--site-text,#1b2b22)]" role="status">Loading page…</div>}>
             <Routes>
               {/* Dedicated Standalone Admin Portal & Login Routes */}
               <Route path="/admin/login" element={<AdminDashboard />} />
@@ -57,6 +70,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
+            </Suspense>
           </ResortProvider>
         </UserAuthProvider>
       </AuthProvider>

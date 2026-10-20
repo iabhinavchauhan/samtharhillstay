@@ -1,8 +1,11 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { apiFetch } from '../utils/api'
 
 export const ResortContext = createContext({
   theme: 'dark',
   siteData: null,
+  siteDataError: '',
+  retrySiteData: () => {},
   loading: true,
   wishlist: [],
   favorites: [],
@@ -32,11 +35,19 @@ function saveStorage(key, value) {
 }
 
 export function ResortProvider({ children }) {
-  const [siteData, setSiteData] = useState(null)
+  const [siteData, setSiteData] = useState(() => loadStorage('publishedSiteData', null))
+  const [siteDataError, setSiteDataError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
+
+  const retrySiteData = useCallback(() => {
+    setLoading(true)
+    setRetryCount((count) => count + 1)
+  }, [])
 
   // Fetch published live data or draft preview from backend
   useEffect(() => {
+    let isCurrentRequest = true
     const isPreview = window.location.search.includes('preview=true')
     const token = localStorage.getItem('samthar_admin_token')
     
@@ -44,11 +55,23 @@ export function ResortProvider({ children }) {
     const endpoint = isPreview && token ? '/api/admin/content/draft' : '/api/content/published'
     const headers = isPreview && token ? { Authorization: `Bearer ${token}` } : {}
 
-    fetch(endpoint, { headers })
+    apiFetch(endpoint, { headers })
       .then((res) => res.json())
       .then((data) => {
         const actual = data.draft ? data.draft : data
+        if (!actual || typeof actual !== 'object' || Array.isArray(actual)) {
+          throw new Error(`The API response from ${endpoint} did not contain site data.`)
+        }
+        if (!isCurrentRequest) return
         setSiteData(actual)
+        setSiteDataError('')
+        if (!isPreview) {
+          try {
+            saveStorage('publishedSiteData', actual)
+          } catch (error) {
+            console.warn('Could not cache published site data locally:', error.message)
+          }
+        }
         
         // Dynamically apply Theme CSS Variables & Typography
         if (actual.theme) {
@@ -74,12 +97,17 @@ export function ResortProvider({ children }) {
         }
       })
       .catch((err) => {
-        console.error('Failed to load published site data from backend:', err)
+        if (!isCurrentRequest) return
+        console.error(`Failed to load published site data from ${endpoint}:`, err)
+        setSiteDataError(err.message || 'Could not load the latest site content.')
       })
       .finally(() => {
-        setLoading(false)
+        if (isCurrentRequest) setLoading(false)
       })
-  }, [])
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [retryCount])
 
   const [wishlist, setWishlist] = useState(loadStorage('wishlist', []))
   const [favorites, setFavorites] = useState(loadStorage('favorites', []))
@@ -155,6 +183,8 @@ export function ResortProvider({ children }) {
     () => ({
       siteData,
       loading,
+      siteDataError,
+      retrySiteData,
       wishlist,
       toggleWishlist,
       favorites,
@@ -168,7 +198,7 @@ export function ResortProvider({ children }) {
       homestays,
       foodItems,
     }),
-    [siteData, loading, wishlist, favorites, reviews, recentViews, bookingDraft, addReview, homestays, foodItems],
+    [siteData, loading, siteDataError, retrySiteData, wishlist, favorites, reviews, recentViews, bookingDraft, addReview, homestays, foodItems],
   )
 
   return <ResortContext.Provider value={value}>{children}</ResortContext.Provider>

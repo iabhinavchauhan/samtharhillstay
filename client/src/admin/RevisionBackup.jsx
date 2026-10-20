@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { History, RotateCcw, ShieldAlert, CheckCircle, Clock, User, Download, UploadCloud, AlertCircle } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { apiFetch } from '../utils/api';
 
 export default function RevisionBackup({ onRestoreSuccess }) {
   const { token } = useAuth();
@@ -12,7 +13,7 @@ export default function RevisionBackup({ onRestoreSuccess }) {
   const fetchRevisions = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/revisions', {
+      const res = await apiFetch('/api/admin/revisions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -36,7 +37,7 @@ export default function RevisionBackup({ onRestoreSuccess }) {
 
     try {
       setActionMsg('Restoring snapshot...');
-      const res = await fetch(`/api/admin/revisions/${id}/restore`, {
+      const res = await apiFetch(`/api/admin/revisions/${id}/restore`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -55,7 +56,7 @@ export default function RevisionBackup({ onRestoreSuccess }) {
 
   const handleDownloadBackup = async () => {
     try {
-      const res = await fetch('/api/admin/backup', {
+      const res = await apiFetch('/api/admin/backup', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const blob = await res.blob();
@@ -85,7 +86,7 @@ export default function RevisionBackup({ onRestoreSuccess }) {
       const text = await file.text();
       const backupJson = JSON.parse(text);
 
-      const res = await fetch('/api/admin/restore-backup', {
+      const res = await apiFetch('/api/admin/restore-backup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export default function RevisionBackup({ onRestoreSuccess }) {
     if (!confirmed) return;
 
     try {
-      const res = await fetch('/api/admin/content/reset-default', {
+      const res = await apiFetch('/api/admin/content/reset-default', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });

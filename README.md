@@ -10,12 +10,9 @@ A modern, database-driven website with a complete Admin Dashboard providing auth
 ```bash
 cd server
 npm install # (if not already installed)
-node index.js
+npm start
 ```
-The backend server runs at `http://localhost:5000` with SQLite persistence (`server/database.sqlite`).
-Default administrator credentials:
-- **Username:** `admin`
-- **Password:** `admin123`
+The backend listens on the platform-provided `PORT` (5000 locally when set in `server/.env`). Site content and app data use MongoDB configured through `MONGODB_URI`.
 
 ### 2. Start the Frontend Application
 ```bash
@@ -23,7 +20,14 @@ cd client
 npm install # (if not already installed)
 npm run dev
 ```
-The frontend Vite server runs at `http://localhost:5173`.
+The frontend Vite server runs at `http://localhost:3000` and proxies API requests to the backend on port 5000.
+
+## Production deployment
+
+- Deploy the `server` directory as the Render web service. Use `npm install` as the build command and `npm start` as the start command. Render supplies `PORT`; configure `MONGODB_URI` and the other server credentials in Render's environment settings.
+- Deploy the frontend to Cloudflare Pages from the repository root with build command `npm ci && npm run build` and output directory `client/dist`.
+- In Cloudflare Pages, set `VITE_API_BASE_URL` to the Render service origin, for example `https://your-service-name.onrender.com`. Use the actual Render hostname, without a trailing slash or `/api` suffix, then trigger a new Pages deployment. The frontend appends `/api/...` paths to this origin.
+- For local frontend development from `client`, Vite proxies `/api` requests to `http://localhost:5000`; set `PORT=5000` in `server/.env` or override the Vite proxy target.
 
 ---
 

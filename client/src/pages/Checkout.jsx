@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
+import { apiFetch } from '../utils/api';
 import { formatPrice } from '../utils/currency';
 import {
   ShieldCheck,
@@ -110,7 +111,7 @@ export default function Checkout() {
           }
         : { fromCart: true };
 
-      const orderRes = await fetch('/api/bookings/create-order', {
+      const orderRes = await apiFetch('/api/bookings/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +185,7 @@ export default function Checkout() {
     setShowTestModal(false);
 
     try {
-      const verifyRes = await fetch('/api/bookings/verify-payment', {
+      const verifyRes = await apiFetch('/api/bookings/verify-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

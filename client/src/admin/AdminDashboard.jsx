@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 import {
   LayoutDashboard,
   Home,
@@ -61,7 +62,7 @@ export default function AdminDashboard() {
   const fetchDraftData = async () => {
     try {
       setLoadingContent(true);
-      const res = await fetch('/api/admin/content/draft', {
+      const res = await apiFetch('/api/admin/content/draft', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -94,7 +95,7 @@ export default function AdminDashboard() {
     if (!content) return;
     setIsSaving(true);
     try {
-      const res = await fetch('/api/admin/content/draft', {
+      const res = await apiFetch('/api/admin/content/draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +121,7 @@ export default function AdminDashboard() {
     setIsPublishing(true);
     try {
       const note = window.prompt('Optional: Enter a brief note describing this publication update:', 'Content & design update');
-      const res = await fetch('/api/admin/content/publish', {
+      const res = await apiFetch('/api/admin/content/publish', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

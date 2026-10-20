@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 import {
   Inbox,
   User,
@@ -19,7 +20,7 @@ export default function InquiriesManager() {
   const fetchInquiries = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/inquiries', {
+      const res = await apiFetch('/api/admin/inquiries', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

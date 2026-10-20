@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../utils/api';
 
 const UserAuthContext = createContext(null);
 
@@ -32,8 +33,8 @@ export function UserAuthProvider({ children }) {
 
     // Verify token & fetch fresh profile and cart
     Promise.all([
-      fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } }),
-      fetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } })
+      apiFetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } }),
+      apiFetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } })
     ])
       .then(async ([profileRes, cartRes]) => {
         if (profileRes.ok) {
@@ -59,7 +60,7 @@ export function UserAuthProvider({ children }) {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await fetch('/api/user/login', {
+    const res = await apiFetch('/api/user/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -76,7 +77,7 @@ export function UserAuthProvider({ children }) {
   };
 
   const signup = async (name, email, password, phone = '') => {
-    const res = await fetch('/api/user/signup', {
+    const res = await apiFetch('/api/user/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, phone })
@@ -103,7 +104,7 @@ export function UserAuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!token) throw new Error('Not authenticated');
-    const res = await fetch('/api/user/profile', {
+    const res = await apiFetch('/api/user/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -120,7 +121,7 @@ export function UserAuthProvider({ children }) {
 
   const changePassword = async (currentPassword, newPassword) => {
     if (!token) throw new Error('Not authenticated');
-    const res = await fetch('/api/user/password', {
+    const res = await apiFetch('/api/user/password', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ export function UserAuthProvider({ children }) {
   const fetchCart = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/cart', {
+      const res = await apiFetch('/api/cart', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -153,7 +154,7 @@ export function UserAuthProvider({ children }) {
     if (!token) {
       throw new Error('AUTH_REQUIRED');
     }
-    const res = await fetch('/api/cart', {
+    const res = await apiFetch('/api/cart', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ export function UserAuthProvider({ children }) {
 
   const updateCartItem = async (itemId, updates) => {
     if (!token) return;
-    const res = await fetch(`/api/cart/${itemId}`, {
+    const res = await apiFetch(`/api/cart/${itemId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ export function UserAuthProvider({ children }) {
 
   const removeFromCart = async (itemId) => {
     if (!token) return;
-    const res = await fetch(`/api/cart/${itemId}`, {
+    const res = await apiFetch(`/api/cart/${itemId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -200,7 +201,7 @@ export function UserAuthProvider({ children }) {
 
   const clearCart = async () => {
     if (!token) return;
-    await fetch('/api/cart', {
+    await apiFetch('/api/cart', {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -211,7 +212,7 @@ export function UserAuthProvider({ children }) {
   const recordRecentView = async (staySlug) => {
     if (!token || !staySlug) return;
     try {
-      await fetch('/api/user/recent-views', {
+      await apiFetch('/api/user/recent-views', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,7 +228,7 @@ export function UserAuthProvider({ children }) {
   const fetchRecentViews = async () => {
     if (!token) return [];
     try {
-      const res = await fetch('/api/user/recent-views', {
+      const res = await apiFetch('/api/user/recent-views', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -242,7 +243,7 @@ export function UserAuthProvider({ children }) {
 
   const fetchBookings = async () => {
     if (!token) return [];
-    const res = await fetch('/api/bookings', {
+    const res = await apiFetch('/api/bookings', {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to load bookings');
@@ -252,7 +253,7 @@ export function UserAuthProvider({ children }) {
 
   const fetchPayments = async () => {
     if (!token) return [];
-    const res = await fetch('/api/payments', {
+    const res = await apiFetch('/api/payments', {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to load payment history');

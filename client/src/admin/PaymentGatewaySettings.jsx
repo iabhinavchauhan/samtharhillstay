@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../utils/api';
 import {
   CreditCard,
   ShieldCheck,
@@ -18,7 +19,7 @@ export default function PaymentGatewaySettings() {
 
   useEffect(() => {
     let active = true;
-    fetch('/api/payments/config')
+    apiFetch('/api/payments/config')
       .then((res) => {
         if (!res.ok) throw new Error('Could not load the payment gateway status.');
         return res.json();
@@ -38,7 +39,7 @@ export default function PaymentGatewaySettings() {
     setChecking(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/payments/verify-credentials', {
+      const res = await apiFetch('/api/admin/payments/verify-credentials', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

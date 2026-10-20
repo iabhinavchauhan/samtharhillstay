@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Trash2, Shield, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { apiFetch } from '../utils/api';
 
 export default function UserManagement() {
   const { token, user: currentUser } = useAuth();
@@ -17,7 +18,7 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/users', {
+      const res = await apiFetch('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -39,7 +40,7 @@ export default function UserManagement() {
     setMsg('');
 
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await apiFetch('/api/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +71,7 @@ export default function UserManagement() {
     if (!window.confirm(`Are you sure you want to delete administrator "${username}"?`)) return;
 
     try {
-      const res = await fetch(`/api/admin/users/${id}`, {
+      const res = await apiFetch(`/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

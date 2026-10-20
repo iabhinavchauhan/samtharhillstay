@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, Search, Check, Copy, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { apiFetch } from '../utils/api';
 
 export default function MediaLibrary({ onSelectImage, selectMode = false }) {
   const { token } = useAuth();
@@ -14,7 +15,7 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
   const fetchMedia = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/media', {
+      const res = await apiFetch('/api/admin/media', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -42,7 +43,7 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
     formData.append('altText', file.name);
 
     try {
-      const res = await fetch('/api/admin/media/upload', {
+      const res = await apiFetch('/api/admin/media/upload', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -66,7 +67,7 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
     if (!window.confirm('Are you sure you want to delete this media file permanently?')) return;
 
     try {
-      const res = await fetch(`/api/admin/media/${id}`, {
+      const res = await apiFetch(`/api/admin/media/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

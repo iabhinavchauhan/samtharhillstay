@@ -10,7 +10,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 const clientDir = path.resolve(__dirname, 'client');
 const clientDistDir = path.resolve(clientDir, 'dist');
 const isProd = process.env.NODE_ENV === 'production';
