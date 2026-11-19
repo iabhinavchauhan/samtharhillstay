@@ -634,11 +634,11 @@ export default function Home() {
             <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
               <label className="text-[11px] font-semibold text-[#415044]">
                 Your Name *
-                <input className="enquiry-input mt-2" name="name" placeholder="e.g. Aanya Sharma" required />
+                <input className="enquiry-input mt-2" name="name" required />
               </label>
               <label className="text-[11px] font-semibold text-[#415044]">
                 WhatsApp / Phone *
-                <input className="enquiry-input mt-2" name="phone" placeholder="+91 98046 00910" type="tel" required />
+                <input className="enquiry-input mt-2" name="phone" type="tel" required />
               </label>
               <label className="text-[11px] font-semibold text-[#415044]">
                 Arrival Date *
@@ -661,7 +661,7 @@ export default function Home() {
               </label>
               <label className="text-[11px] font-semibold text-[#415044] sm:col-span-2">
                 Special Requests (optional)
-                <textarea className="enquiry-input mt-2" name="message" rows="3" placeholder="Dietary preferences, transport pickup, children, or celebrations..." />
+                <textarea className="enquiry-input mt-2" name="message" rows="3" />
               </label>
               <button
                 className="sm:col-span-2 rounded-full bg-[#24c96b] hover:bg-[#20b95f] px-5 py-3 text-sm font-bold text-[#0b2819] transition shadow-md"

@@ -23,7 +23,6 @@ export default function Contact() {
               <input
                 value={form.name}
                 onChange={handleChange('name')}
-                placeholder="Your name"
                 className="mt-3 w-full rounded-3xl border border-smoke/10 bg-smoke/5 px-4 py-3 text-sm text-cream outline-none transition focus:border-forest"
               />
             </label>
@@ -32,7 +31,6 @@ export default function Contact() {
               <input
                 value={form.email}
                 onChange={handleChange('email')}
-                placeholder="Your email"
                 className="mt-3 w-full rounded-3xl border border-smoke/10 bg-smoke/5 px-4 py-3 text-sm text-cream outline-none transition focus:border-forest"
               />
             </label>
@@ -41,7 +39,6 @@ export default function Contact() {
               <textarea
                 value={form.message}
                 onChange={handleChange('message')}
-                placeholder="Tell us which homestay you want and your dates"
                 rows={6}
                 className="mt-3 w-full rounded-3xl border border-smoke/10 bg-smoke/5 px-4 py-3 text-sm text-cream outline-none transition focus:border-forest"
               />
