@@ -250,7 +250,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[#59645a]">Duration & Guests</span>
-                <span className="font-semibold text-[#10281e]">{paymentSuccess.nights} Nights, {paymentSuccess.guests} Guests</span>
+                <span className="font-semibold text-[#10281e]">{paymentSuccess.nights} Nights · {paymentSuccess.adults || paymentSuccess.guests} Adults, {(paymentSuccess.child_ages || []).length} Children</span>
               </div>
               <div className="flex justify-between items-center border-t border-[#eee8da] pt-3 text-sm font-bold">
                 <span className="text-[#10281e]">Amount Paid</span>
@@ -385,7 +385,7 @@ export default function Checkout() {
                     <p className="text-xs text-[#7a5e1c] font-semibold">{item.room_name}</p>
                     <div className="text-[11px] text-[#59645a] flex gap-3">
                       <span>{item.check_in} → {item.check_out}</span>
-                      <span>({item.nights} nights, {item.guests} guests)</span>
+                      <span>({item.nights} nights · {item.adults || item.guests} adults, {(item.child_ages || []).length} children)</span>
                     </div>
                   </div>
                   <div className="text-right">

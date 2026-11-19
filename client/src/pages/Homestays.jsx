@@ -23,6 +23,7 @@ export default function Homestays() {
         <p className="mt-5 max-w-2xl text-base leading-8 text-[#5d645f]">
           Discover handcrafted hill retreats with warm hospitality, regional food, and cozy spaces built for rest.
         </p>
+        <p className="mt-4 text-sm font-medium text-[#7a5e1c]">Children under 6 stay at half the per guest rate; ages 6 and above are charged the full rate.</p>
       </header>
 
       <div className="mb-10 grid gap-4 md:grid-cols-3">

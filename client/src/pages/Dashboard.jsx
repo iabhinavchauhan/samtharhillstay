@@ -580,25 +580,57 @@ export default function Dashboard() {
                               />
                             </div>
                             <div className="col-span-2 sm:col-span-1">
-                              <label className="text-[10px] font-bold text-[#59645a] uppercase">Guests</label>
+                              <label className="text-[10px] font-bold text-[#59645a] uppercase">Adults</label>
                               <select
-                                value={item.guests}
-                                onChange={(e) => runCartAction(item.id, () => updateCartItem(item.id, { guests: parseInt(e.target.value, 10) }))}
+                                value={item.adults || Math.max(1, item.guests - (item.child_ages || []).length)}
+                                onChange={(e) => runCartAction(item.id, () => updateCartItem(item.id, { adults: parseInt(e.target.value, 10) }))}
                                 disabled={cartBusyIds.includes(item.id)}
                                 className="mt-0.5 w-full rounded-lg border border-[#ded8c9] bg-[#faf8f1] px-2 py-1 text-xs text-[#10281e] disabled:opacity-60"
                               >
                                 {[1, 2, 3, 4, 5, 6].map((num) => (
                                   <option key={num} value={num}>
-                                    {num} {num === 1 ? 'Guest' : 'Guests'}
+                                    {num} {num === 1 ? 'Adult' : 'Adults'}
                                   </option>
                                 ))}
                               </select>
                             </div>
                           </div>
 
+                          <div className="rounded-xl bg-[#faf8f1] p-3 text-xs">
+                            <label className="text-[10px] font-bold text-[#59645a] uppercase">Children (under 18)</label>
+                            <select
+                              value={(item.child_ages || []).length}
+                              onChange={(e) => {
+                                const ages = item.child_ages || [];
+                                const childAges = Array.from({ length: Number(e.target.value) }, (_, index) => ages[index] ?? 6);
+                                runCartAction(item.id, () => updateCartItem(item.id, { childAges }));
+                              }}
+                              disabled={cartBusyIds.includes(item.id)}
+                              className="mt-1 w-full rounded-lg border border-[#ded8c9] bg-white px-2 py-1 text-xs text-[#10281e]"
+                            >
+                              {[0, 1, 2, 3, 4].map((num) => <option key={num} value={num}>{num} {num === 1 ? 'Child' : 'Children'}</option>)}
+                            </select>
+                            {(item.child_ages || []).map((age, index) => (
+                              <label key={index} className="mt-2 block text-[10px] font-bold text-[#59645a]">Child {index + 1} age
+                                <select
+                                  value={age}
+                                  onChange={(e) => {
+                                    const childAges = (item.child_ages || []).map((value, childIndex) => childIndex === index ? Number(e.target.value) : value);
+                                    runCartAction(item.id, () => updateCartItem(item.id, { childAges }));
+                                  }}
+                                  disabled={cartBusyIds.includes(item.id)}
+                                  className="mt-1 w-full rounded-lg border border-[#ded8c9] bg-white px-2 py-1 text-xs font-normal text-[#10281e]"
+                                >
+                                  {Array.from({ length: 18 }, (_, childAge) => <option key={childAge} value={childAge}>{childAge} years</option>)}
+                                </select>
+                              </label>
+                            ))}
+                            <p className="mt-2 text-[10px] text-[#59645a]">Under 6: half rate · Age 6 and above: full rate</p>
+                          </div>
+
                           <div className="flex items-center justify-between border-t border-[#eee8da] pt-2 text-xs">
                             <span className="text-[#59645a]">
-                              {formatPrice(item.price_per_night)} × {item.nights} {item.nights === 1 ? 'night' : 'nights'} × {item.guests} {item.guests === 1 ? 'guest' : 'guests'}
+                              {item.adults || Math.max(1, item.guests - (item.child_ages || []).length)} adults · {(item.child_ages || []).length} children · {item.nights} {item.nights === 1 ? 'night' : 'nights'}
                             </span>
                             <span className="font-bold text-sm text-[#10281e]">
                               {formatPrice(item.total_price)}
@@ -857,7 +889,7 @@ export default function Dashboard() {
                             <span>Check-in: <strong>{booking.check_in}</strong></span>
                             <span>Check-out: <strong>{booking.check_out}</strong></span>
                             <span>Nights: <strong>{booking.nights}</strong></span>
-                            <span>Guests: <strong>{booking.guests}</strong></span>
+                            <span>Guests: <strong>{booking.adults || booking.guests} adults, {(booking.child_ages || []).length} children</strong></span>
                           </div>
                         </div>
                       </div>
@@ -1004,7 +1036,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-[#59645a]">Guests</span>
-                  <p className="font-bold text-[#10281e]">{selectedBooking.guests} Guests ({selectedBooking.nights} Nights)</p>
+                  <p className="font-bold text-[#10281e]">{selectedBooking.adults || selectedBooking.guests} adults, {(selectedBooking.child_ages || []).length} children ({selectedBooking.nights} Nights)</p>
                 </div>
               </div>
 

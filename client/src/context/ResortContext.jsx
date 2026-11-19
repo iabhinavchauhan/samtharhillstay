@@ -98,7 +98,7 @@ export function ResortProvider({ children }) {
       }
     }
     document.addEventListener('visibilitychange', refreshWhenVisible)
-    const refreshInterval = window.setInterval(refreshWhenVisible, 60_000)
+    const refreshInterval = window.setInterval(refreshWhenVisible, 10_000)
     return () => {
       document.removeEventListener('visibilitychange', refreshWhenVisible)
       window.clearInterval(refreshInterval)
@@ -129,14 +129,30 @@ export function ResortProvider({ children }) {
 
   useEffect(() => {
     let isCurrentRequest = true
-    apiFetch('/api/reviews')
-      .then(async (res) => {
+    let requestInFlight = false
+    const refreshReviews = async () => {
+      if (!isCurrentRequest || requestInFlight || document.visibilityState !== 'visible') return
+      requestInFlight = true
+      try {
+        const res = await apiFetch('/api/reviews')
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Could not load reviews.')
         if (isCurrentRequest) setReviews(Array.isArray(data) ? data : [])
-      })
-      .catch((error) => console.error('Could not load guest reviews:', error))
-    return () => { isCurrentRequest = false }
+      } catch (error) {
+        console.error('Could not load guest reviews:', error)
+      } finally {
+        requestInFlight = false
+      }
+    }
+
+    void refreshReviews()
+    const refreshInterval = window.setInterval(refreshReviews, 10_000)
+    document.addEventListener('visibilitychange', refreshReviews)
+    return () => {
+      isCurrentRequest = false
+      window.clearInterval(refreshInterval)
+      document.removeEventListener('visibilitychange', refreshReviews)
+    }
   }, [])
 
   useEffect(() => {

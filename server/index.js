@@ -234,8 +234,18 @@ function calculateNights(checkIn, checkOut) {
   return isNaN(nights) ? 1 : nights;
 }
 
-function calculateStayTotal(pricePerNight, nights, guests) {
-  return Number(pricePerNight || 0) * Math.max(1, Number(nights) || 1) * Math.max(1, Number(guests) || 1);
+function normalizeChildAges(ages) {
+  return Array.isArray(ages)
+    ? ages.map((age) => Math.max(0, Math.min(17, Math.floor(Number(age) || 0))))
+    : [];
+}
+
+function calculateStayTotal(pricePerNight, nights, guests, adults, childAges = []) {
+  const ages = normalizeChildAges(childAges);
+  const guestCount = Math.max(1, Number(guests) || 1);
+  const adultCount = Math.max(0, Math.min(guestCount - ages.length, Number(adults) || guestCount - ages.length));
+  const childRateUnits = ages.reduce((total, age) => total + (age < 6 ? 0.5 : 1), 0);
+  return Number(pricePerNight || 0) * Math.max(1, Number(nights) || 1) * (adultCount + childRateUnits);
 }
 
 // -------------------------------------------------------------
@@ -484,12 +494,15 @@ app.get('/api/cart', authenticateUser, async (req, res) => {
       const item = toPlain(i);
       const { room } = await getAuthoritativeStayAndRoom(item.stay_slug, item.room_name);
       const nights = calculateNights(item.check_in, item.check_out);
+      const child_ages = normalizeChildAges(item.child_ages);
       const guests = Math.max(1, Number(item.guests) || 1);
-      const total_price = calculateStayTotal(room.price, nights, guests);
-      if (item.nights !== nights || item.guests !== guests || Number(item.total_price) !== total_price || Number(item.price_per_night) !== Number(room.price)) {
-        await CartItem.findByIdAndUpdate(item._id, { nights, guests, total_price, price_per_night: room.price });
+      const adults = child_ages.length ? Math.max(1, Number(item.adults) || guests - child_ages.length) : guests;
+      const totalGuests = Math.max(guests, adults + child_ages.length);
+      const total_price = calculateStayTotal(room.price, nights, totalGuests, adults, child_ages);
+      if (item.nights !== nights || item.guests !== totalGuests || item.adults !== adults || Number(item.total_price) !== total_price || Number(item.price_per_night) !== Number(room.price)) {
+        await CartItem.findByIdAndUpdate(item._id, { nights, guests: totalGuests, adults, child_ages, total_price, price_per_night: room.price });
       }
-      return { ...item, nights, guests, total_price, price_per_night: room.price, id: i._id };
+      return { ...item, nights, guests: totalGuests, adults, child_ages, total_price, price_per_night: room.price, id: i._id };
     }));
     const totalAmount = formatted.reduce((acc, item) => acc + (Number(item.total_price) || 0), 0);
 
@@ -508,7 +521,7 @@ app.get('/api/cart', authenticateUser, async (req, res) => {
 // 2. Add Stay to Cart
 app.post('/api/cart', authenticateUser, async (req, res) => {
   try {
-    const { staySlug, roomName, checkIn, checkOut, guests } = req.body;
+    const { staySlug, roomName, checkIn, checkOut, guests, adults, childAges } = req.body;
     if (!staySlug) {
       return res.status(400).json({ error: 'staySlug is required.' });
     }
@@ -518,8 +531,10 @@ app.post('/api/cart', authenticateUser, async (req, res) => {
     const defaultCheckIn = checkIn || new Date(Date.now() + 86400000).toISOString().split('T')[0];
     const defaultCheckOut = checkOut || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
     const nights = calculateNights(defaultCheckIn, defaultCheckOut);
-    const guestCount = Math.max(1, parseInt(guests || 2, 10));
-    const totalPrice = calculateStayTotal(room.price, nights, guestCount);
+    const ages = normalizeChildAges(childAges);
+    const adultCount = Math.max(1, parseInt(adults || guests || 2, 10));
+    const guestCount = adultCount + ages.length;
+    const totalPrice = calculateStayTotal(room.price, nights, guestCount, adultCount, ages);
 
     const cartItem = await CartItem.create({
       user_id: req.user.id,
@@ -532,6 +547,8 @@ app.post('/api/cart', authenticateUser, async (req, res) => {
       check_out: defaultCheckOut,
       nights,
       guests: guestCount,
+      adults: adultCount,
+      child_ages: ages,
       total_price: totalPrice,
       image: stay.mainImage || (stay.gallery && stay.gallery[0]) || ''
     });
@@ -561,21 +578,25 @@ app.put('/api/cart/:id', authenticateUser, async (req, res) => {
       return res.status(404).json({ error: 'Cart item not found.' });
     }
 
-    const { checkIn, checkOut, guests } = req.body;
+    const { checkIn, checkOut, guests, adults, childAges } = req.body;
     const newCheckIn = checkIn || item.check_in;
     const newCheckOut = checkOut || item.check_out;
     const nights = calculateNights(newCheckIn, newCheckOut);
-    const guestCount = guests ? Math.max(1, parseInt(guests, 10)) : item.guests;
+    const ages = childAges === undefined ? normalizeChildAges(item.child_ages) : normalizeChildAges(childAges);
+    const adultCount = adults !== undefined ? Math.max(1, parseInt(adults, 10)) : (ages.length ? Math.max(1, Number(item.adults) || Number(item.guests) - ages.length) : Math.max(1, Number(guests) || Number(item.guests) || 1));
+    const guestCount = adultCount + ages.length;
 
     // Recalculate price using authoritative room price
     const { room } = await getAuthoritativeStayAndRoom(item.stay_slug, item.room_name);
-    const totalPrice = calculateStayTotal(room.price, nights, guestCount);
+    const totalPrice = calculateStayTotal(room.price, nights, guestCount, adultCount, ages);
 
     const updated = await CartItem.findByIdAndUpdate(req.params.id, {
       check_in: newCheckIn,
       check_out: newCheckOut,
       nights,
       guests: guestCount,
+      adults: adultCount,
+      child_ages: ages,
       price_per_night: room.price,
       total_price: totalPrice
     }, { returnDocument: 'after' });
@@ -662,7 +683,7 @@ app.get('/api/admin/payments/verify-credentials', authenticateToken, async (req,
 // 2. Create Order & Booking (Server-calculated price validation)
 app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
   try {
-    const { staySlug, roomName, checkIn, checkOut, guests, fromCart } = req.body;
+    const { staySlug, roomName, checkIn, checkOut, guests, adults, childAges, fromCart } = req.body;
 
     let bookingItems = [];
     if (fromCart) {
@@ -674,10 +695,12 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
         const data = toPlain(item);
         const { room } = await getAuthoritativeStayAndRoom(data.stay_slug, data.room_name);
         const nights = calculateNights(data.check_in, data.check_out);
-        const guests = Math.max(1, Number(data.guests) || 1);
-        const total_price = calculateStayTotal(room.price, nights, guests);
-        await CartItem.findByIdAndUpdate(data._id, { nights, guests, price_per_night: room.price, total_price });
-        return { ...data, nights, guests, price_per_night: room.price, total_price };
+        const child_ages = normalizeChildAges(data.child_ages);
+        const adults = child_ages.length ? Math.max(1, Number(data.adults) || Number(data.guests) - child_ages.length) : Math.max(1, Number(data.guests) || 1);
+        const guests = adults + child_ages.length;
+        const total_price = calculateStayTotal(room.price, nights, guests, adults, child_ages);
+        await CartItem.findByIdAndUpdate(data._id, { nights, guests, adults, child_ages, price_per_night: room.price, total_price });
+        return { ...data, nights, guests, adults, child_ages, price_per_night: room.price, total_price };
       }));
     } else {
       if (!staySlug) {
@@ -687,8 +710,10 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
       const defaultCheckIn = checkIn || new Date(Date.now() + 86400000).toISOString().split('T')[0];
       const defaultCheckOut = checkOut || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
       const nights = calculateNights(defaultCheckIn, defaultCheckOut);
-      const guestCount = Math.max(1, parseInt(guests || 2, 10));
-      const totalPrice = calculateStayTotal(room.price, nights, guestCount);
+      const child_ages = normalizeChildAges(childAges);
+      const adultCount = Math.max(1, parseInt(adults || guests || 2, 10));
+      const guestCount = adultCount + child_ages.length;
+      const totalPrice = calculateStayTotal(room.price, nights, guestCount, adultCount, child_ages);
 
       bookingItems = [{
         stay_slug: stay.slug,
@@ -699,6 +724,8 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
         check_out: defaultCheckOut,
         nights,
         guests: guestCount,
+        adults: adultCount,
+        child_ages,
         total_price: totalPrice,
         image: stay.mainImage || (stay.gallery && stay.gallery[0]) || ''
       }];
@@ -752,6 +779,8 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
       check_out: primaryItem.check_out,
       nights: primaryItem.nights,
       guests: primaryItem.guests,
+      adults: primaryItem.adults || primaryItem.guests,
+      child_ages: primaryItem.child_ages || [],
       price_per_night: primaryItem.price_per_night,
       total_amount: totalAmount,
       currency: 'INR',

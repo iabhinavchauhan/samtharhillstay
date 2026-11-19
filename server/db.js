@@ -86,6 +86,8 @@ const cartItemSchema = new mongoose.Schema({
   check_out: { type: String, required: true },
   nights: { type: Number, required: true, default: 1 },
   guests: { type: Number, required: true, default: 1 },
+  adults: { type: Number },
+  child_ages: { type: [Number], default: [] },
   total_price: { type: Number, required: true },
   image: { type: String, default: '' },
   created_at: { type: Date, default: Date.now }
@@ -106,6 +108,8 @@ const bookingSchema = new mongoose.Schema({
   check_out: { type: String, required: true },
   nights: { type: Number, required: true, default: 1 },
   guests: { type: Number, required: true, default: 1 },
+  adults: { type: Number },
+  child_ages: { type: [Number], default: [] },
   price_per_night: { type: Number, required: true },
   total_amount: { type: Number, required: true },
   currency: { type: String, default: 'INR' },

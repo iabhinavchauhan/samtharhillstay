@@ -22,7 +22,8 @@ export default function HomestayDetails() {
     const d = new Date(Date.now() + 86400000 * 3)
     return d.toISOString().split("T")[0]
   })
-  const [guests, setGuests] = useState(2)
+  const [adults, setAdults] = useState(2)
+  const [childAges, setChildAges] = useState([])
   const [cartSuccess, setCartSuccess] = useState(false)
   const [cartError, setCartError] = useState("")
   const [addingToCart, setAddingToCart] = useState(false)
@@ -58,8 +59,9 @@ export default function HomestayDetails() {
   }, [checkIn, checkOut])
 
   const calculatedTotal = useMemo(() => {
-    return (currentRoom?.price || 100) * nights * guests
-  }, [currentRoom, nights, guests])
+    const guestUnits = adults + childAges.reduce((total, age) => total + (Number(age) < 6 ? 0.5 : 1), 0)
+    return (currentRoom?.price || 100) * nights * guestUnits
+  }, [currentRoom, nights, adults, childAges])
 
   useEffect(() => {
     const pendingCartItem = location.state?.pendingCartItem
@@ -86,7 +88,9 @@ export default function HomestayDetails() {
       roomName: currentRoom.name,
       checkIn,
       checkOut,
-      guests
+      guests: adults + childAges.length,
+      adults,
+      childAges
     }
     if (!isAuthenticated) {
       navigate("/login", {
@@ -246,18 +250,36 @@ export default function HomestayDetails() {
               </div>
 
               <div className="text-xs">
-                <label className="text-[10px] uppercase font-bold text-[#9b782d]">Total Guests</label>
+                <label className="text-[10px] uppercase font-bold text-[#9b782d]">Adults</label>
                 <select
-                  value={guests}
-                  onChange={(e) => setGuests(parseInt(e.target.value, 10))}
+                  value={adults}
+                  onChange={(e) => setAdults(parseInt(e.target.value, 10))}
                   className="mt-1 w-full rounded-lg bg-white border border-[#e5dbc0] p-2 text-xs text-[#10281e] outline-none focus:border-[#caa34b]"
                 >
                   {[1, 2, 3, 4, 5, 6].map((num) => (
                     <option key={num} value={num}>
-                      {num} {num === 1 ? 'Guest' : 'Guests'} (Includes Farm Breakfast)
+                      {num} {num === 1 ? 'Adult' : 'Adults'}
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="text-xs">
+                <label className="text-[10px] uppercase font-bold text-[#9b782d]">Children (under 18)</label>
+                <select
+                  value={childAges.length}
+                  onChange={(e) => setChildAges((ages) => Array.from({ length: Number(e.target.value) }, (_, index) => ages[index] ?? 6))}
+                  className="mt-1 w-full rounded-lg bg-white border border-[#e5dbc0] p-2 text-xs text-[#10281e] outline-none focus:border-[#caa34b]"
+                >
+                  {[0, 1, 2, 3, 4].map((count) => <option key={count} value={count}>{count} {count === 1 ? 'Child' : 'Children'}</option>)}
+                </select>
+                {childAges.map((age, index) => (
+                  <label key={index} className="mt-2 block text-[10px] font-bold text-[#59645a]">Child {index + 1} age
+                    <select value={age} onChange={(e) => setChildAges((ages) => ages.map((value, childIndex) => childIndex === index ? Number(e.target.value) : value))} className="mt-1 w-full rounded-lg bg-white border border-[#e5dbc0] p-2 text-xs font-normal text-[#10281e]">
+                      {Array.from({ length: 18 }, (_, childAge) => <option key={childAge} value={childAge}>{childAge} years</option>)}
+                    </select>
+                  </label>
+                ))}
+                <p className="mt-2 text-[10px] text-[#6c7166]">Under 6: half rate · Age 6 and above: full rate</p>
               </div>
             </div>
 
@@ -289,8 +311,8 @@ export default function HomestayDetails() {
 
             <div className="mt-6 rounded-2xl bg-[#f4efdf] border border-[#caa34b]/30 p-4 space-y-1 text-xs">
               <div className="flex justify-between text-[#5d645f]">
-                <span>Rate ({nights} {nights === 1 ? 'night' : 'nights'} × {guests} {guests === 1 ? 'guest' : 'guests'})</span>
-                <span>{formatPrice(currentRoom?.price)} × {nights} nights × {guests} guests</span>
+                <span>Rate ({nights} {nights === 1 ? 'night' : 'nights'} · {adults} adults · {childAges.length} children)</span>
+                <span>{formatPrice(currentRoom?.price)} per adult/night · children under 6 half rate</span>
               </div>
               <div className="flex justify-between items-baseline pt-1 border-t border-[#e5dbc0] text-sm font-bold text-[#10281e]">
                 <span>Estimated Total</span>

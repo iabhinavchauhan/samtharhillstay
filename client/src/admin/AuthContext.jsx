@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/api';
 import { AuthContext } from './AuthContext.js';
-const ADMIN_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const ADMIN_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 const ADMIN_SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
 
 function readTokenExpiry(token) {
