@@ -695,7 +695,7 @@ export default function Home() {
                   <path d="M7.1 18.2 7.8 15.8a6.2 6.2 0 1 1 2.1 2l-2.8.4Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
                   <path d="M9.3 8.7c.2-.4.4-.4.6-.4h.4l.7 1.6-.7.7a5 5 0 0 0 2.2 2.2l.7-.7 1.6.7v.4c0 .2 0 .4-.4.6-.5.3-1.2.4-1.8.2-1.5-.4-3.4-2.3-3.8-3.8-.2-.6-.1-1.3.2-1.8Z" fill="white" />
                 </svg>
-                Chat with host on WhatsApp →
+                Contact personal care →
               </a>
             </div>
           </aside>
