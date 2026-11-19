@@ -200,8 +200,9 @@ export default function Gallery() {
                   <div
                     key={`${stay.slug}-${index}`}
                     className={`overflow-hidden rounded-[30px] border border-smoke/10 bg-cover bg-center shadow-soft ${index % 3 === 0 ? 'h-80 sm:h-96' : index % 3 === 1 ? 'h-64 sm:h-80' : 'h-72 sm:h-88'}`}
-                    style={{ backgroundImage: `url('${src}')` }}
-                  />
+                  >
+                    <img src={src} alt={`${stay.name} photo ${index + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  </div>
                 ))}
               </div>
             </section>

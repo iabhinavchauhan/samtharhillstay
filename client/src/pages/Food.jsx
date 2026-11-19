@@ -32,7 +32,9 @@ export default function Food() {
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {displayDishes.map((item) => (
                   <article key={item.id} className="overflow-hidden rounded-[32px] border border-smoke/10 bg-smoke/5 shadow-soft">
-                    <div className="h-56 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
+                    <div className="h-56 overflow-hidden">
+                      <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                    </div>
                     <div className="space-y-4 p-6">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-lg font-semibold text-cream">{item.name}</p>

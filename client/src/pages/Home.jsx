@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext.js'
 import { formatPrice } from '../utils/currency'
 import { apiFetch } from '../utils/api'
+import { responsiveUnsplashImage, responsiveUnsplashSrcSet } from '../utils/resolveImage'
 import { homestays as defaultHomestays } from '../data/resortData'
 
 function compressReviewPhoto(file) {
@@ -156,6 +157,7 @@ export default function Home() {
   const heroImages = useMemo(() => hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=1600&q=75'], [hero.images])
 
   const [heroImageIndex, setHeroImageIndex] = useState(0)
+  const currentHeroImage = heroImages[heroImageIndex] || heroImages[0]
   const [activeStayImage, setActiveStayImage] = useState(null)
   const [preferredStay, setPreferredStay] = useState('No preference')
   const [reviewRating, setReviewRating] = useState(5)
@@ -274,7 +276,9 @@ export default function Home() {
         <section id="home" className="home-hero relative isolate flex items-end bg-[#10281e]">
           <img
             key={heroImageIndex}
-            src={heroImages[heroImageIndex]}
+            src={responsiveUnsplashImage(currentHeroImage)}
+            srcSet={responsiveUnsplashSrcSet(currentHeroImage)}
+            sizes="100vw"
             alt="Mountain landscape around Samthar"
             fetchPriority="high"
             decoding="async"

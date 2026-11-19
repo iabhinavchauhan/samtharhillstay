@@ -146,11 +146,15 @@ export default function HomestayDetails() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             {stay.gallery.map((image, idx) => (
-              <div
-                key={image}
-                className="overflow-hidden rounded-[28px] bg-cover bg-center h-64"
-                style={{ backgroundImage: `url(${resolveImage(image, `${stay.slug}-${idx}`)})` }}
-              />
+              <div key={image} className="h-64 overflow-hidden rounded-[28px]">
+                <img
+                  src={resolveImage(image, `${stay.slug}-${idx}`)}
+                  alt={`${stay.name} room and property ${idx + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
+              </div>
             ))}
           </div>
 

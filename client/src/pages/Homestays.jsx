@@ -52,10 +52,15 @@ export default function Homestays() {
             className="group overflow-hidden rounded-[32px] border border-[#e5dbc0] bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
           >
             <div>
-              <div
-                className="h-72 bg-cover bg-center transition duration-500 group-hover:scale-105"
-                style={{ backgroundImage: `url(${stay.mainImage || resolveImage(stay.image, stay.slug)})` }}
-              />
+              <div className="h-72 overflow-hidden">
+                <img
+                  src={resolveImage(stay.mainImage || stay.image, stay.slug)}
+                  alt={stay.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              </div>
               <div className="space-y-4 p-8">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.32em] text-[#9b782d] font-bold">{stay.location}</p>
