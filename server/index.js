@@ -28,10 +28,14 @@ import {
 import { sanitiseContentFonts } from './utils/theme.js';
 import { describeRazorpayError, validateRazorpayCredentials, cleanCredential, razorpaySetupInstructions, checkRazorpayCredentials } from './utils/razorpay.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const ENV_FILE = path.join(__dirname, '.env');
+
+// Load the server's local file independently of the working directory. Render
+// injects its environment values before startup; dotenv's default behavior
+// preserves those values rather than replacing them with file contents.
+dotenv.config({ path: ENV_FILE, override: false });
 
 export const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
@@ -42,7 +46,6 @@ export function assertJwtSecret(secret, environment = process.env.NODE_ENV) {
   }
 }
 assertJwtSecret(JWT_SECRET);
-const ENV_FILE = path.join(__dirname, '.env');
 
 let RAZORPAY_KEY_ID = cleanCredential(process.env.RAZORPAY_KEY_ID);
 let RAZORPAY_KEY_SECRET = cleanCredential(process.env.RAZORPAY_KEY_SECRET);
@@ -74,8 +77,8 @@ function configureRazorpay() {
 
 configureRazorpay();
 
-// Reload .env in place when it changes, so new gateway keys take effect
-// immediately without needing a manual server restart.
+// Reload only local Razorpay settings in development. Never overwrite Render's
+// injected database, administrator, or signing-secret configuration.
 function watchEnvFile() {
   if (!fs.existsSync(ENV_FILE)) return;
   let reloadTimer = null;
@@ -84,9 +87,14 @@ function watchEnvFile() {
       clearTimeout(reloadTimer);
       reloadTimer = setTimeout(() => {
         try {
-          dotenv.config({ path: ENV_FILE, override: true });
+          const fileConfig = dotenv.parse(fs.readFileSync(ENV_FILE));
+          for (const key of ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET']) {
+            if (Object.prototype.hasOwnProperty.call(fileConfig, key)) {
+              process.env[key] = fileConfig[key];
+            }
+          }
           configureRazorpay();
-          console.log('[Server] Reloaded configuration from .env');
+          console.log('[Server] Reloaded local Razorpay configuration');
         } catch (err) {
           console.warn('[Server] Could not reload .env:', err.message);
         }
@@ -97,7 +105,7 @@ function watchEnvFile() {
   }
 }
 
-if (process.env.NODE_ENV !== 'test') watchEnvFile();
+if (!['test', 'production'].includes(process.env.NODE_ENV)) watchEnvFile();
 
 app.use(cors({
   origin: '*',

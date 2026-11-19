@@ -8,7 +8,7 @@ process.env.ADMIN_PASSWORD = 'Test-Only-Admin-Password-2026!';
 process.env.JWT_SECRET = 'test-only-jwt-secret-for-local-integration-tests';
 process.env.NODE_ENV = 'test';
 
-const { connectDb } = await import('../db.js');
+const { connectDb, getAdminPasswordDiagnostics } = await import('../db.js');
 const { app, assertJwtSecret } = await import('../index.js');
 let server;
 let origin;
@@ -50,6 +50,13 @@ test('production refuses missing or weak JWT secrets', () => {
   assert.throws(() => assertJwtSecret('', 'production'), /at least 32 characters/);
   assert.throws(() => assertJwtSecret('too-short', 'production'), /at least 32 characters/);
   assert.doesNotThrow(() => assertJwtSecret('random-secret-with-at-least-32-characters', 'production'));
+});
+
+test('admin password diagnostics reveal presence and character count only', () => {
+  assert.deepEqual(getAdminPasswordDiagnostics(null), { configured: false, characterLength: 0 });
+  assert.deepEqual(getAdminPasswordDiagnostics(''), { configured: true, characterLength: 0 });
+  assert.deepEqual(getAdminPasswordDiagnostics('short'), { configured: true, characterLength: 5 });
+  assert.deepEqual(getAdminPasswordDiagnostics('🔐'.repeat(12)), { configured: true, characterLength: 12 });
 });
 
 test('backend refuses to start without MongoDB unless temporary storage is explicitly allowed', async () => {

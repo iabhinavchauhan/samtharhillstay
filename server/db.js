@@ -632,10 +632,12 @@ export async function connectDb() {
       isMongoConnected = true;
       console.log(`[MongoDB] Connected to persistent database "${mongoose.connection.name}" successfully.`);
 
-      const existingAdmin = await MongoAdmin.findOne({ username: 'admin' });
+      const existingAdmin = await MongoAdmin.findOne({ username: 'admin' }).select('_id').lean();
+      console.info(`[MongoDB] First-admin lookup: database=${mongoose.connection.name} adminRecordFound=${Boolean(existingAdmin)}`);
       if (!existingAdmin) {
         const defaultPassword = process.env.ADMIN_PASSWORD;
-        if (!defaultPassword || defaultPassword.length < 12) {
+        const passwordDiagnostics = logAdminPasswordDiagnostics();
+        if (!passwordDiagnostics.configured || !defaultPassword || defaultPassword.length < 12) {
           throw new Error('Set a unique ADMIN_PASSWORD of at least 12 characters before initializing the first administrator.');
         }
         const hashedPassword = await bcrypt.hash(defaultPassword, 10);
@@ -678,7 +680,8 @@ export async function connectDb() {
 
   console.log('[AI Studio] Initializing resilient in-memory store for Samthar...');
   const defaultPassword = process.env.ADMIN_PASSWORD;
-  if (!defaultPassword || defaultPassword.length < 12) {
+  const passwordDiagnostics = logAdminPasswordDiagnostics();
+  if (!passwordDiagnostics.configured || !defaultPassword || defaultPassword.length < 12) {
     throw new Error('Set ADMIN_PASSWORD to a unique value of at least 12 characters before using the temporary admin store.');
   }
   const hashedPassword = await bcrypt.hash(defaultPassword, 10);
@@ -784,6 +787,20 @@ export async function connectDb() {
     }
   ];
   console.log('[AI Studio] In-memory store ready. Default traveler account: traveler@samthar.com / password123');
+}
+
+export function getAdminPasswordDiagnostics(value = process.env.ADMIN_PASSWORD) {
+  const configured = typeof value === 'string';
+  return {
+    configured,
+    characterLength: configured ? Array.from(value).length : 0
+  };
+}
+
+function logAdminPasswordDiagnostics() {
+  const diagnostics = getAdminPasswordDiagnostics();
+  console.info(`[Config] ADMIN_PASSWORD configured=${diagnostics.configured} characterLength=${diagnostics.characterLength}`);
+  return diagnostics;
 }
 
 export function getPersistenceStatus() {
