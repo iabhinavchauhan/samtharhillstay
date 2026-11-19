@@ -1,6 +1,5 @@
-import { createContext, useMemo, useState } from 'react'
-
-export const CompareContext = createContext()
+import { useMemo, useState } from 'react'
+import { CompareContext } from './CompareContext.js'
 
 export function CompareProvider({ children }) {
   const [compareItems, setCompareItems] = useState([])

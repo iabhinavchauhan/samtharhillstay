@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Utensils, Plus, Trash2, Edit3, Image as ImageIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Utensils, Plus, Trash2 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
 
 export default function FoodManager({ content, onChange }) {
@@ -60,7 +60,7 @@ export default function FoodManager({ content, onChange }) {
         {foodItems.map((item, idx) => (
           <div key={item.id || idx} className="bg-[#10281e] rounded-2xl border border-white/10 overflow-hidden flex flex-col">
             <div className="h-40 relative group bg-black/40">
-              <img src={item.image} alt="" className="w-full h-full object-cover" />
+              <img src={item.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => {

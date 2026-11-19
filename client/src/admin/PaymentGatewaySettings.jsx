@@ -9,7 +9,7 @@ import {
   Loader2,
   KeyRound
 } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.js';
 
 export default function PaymentGatewaySettings() {
   const { token } = useAuth();

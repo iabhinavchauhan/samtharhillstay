@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/api';
 import {
   Inbox,
   User,
-  Phone,
-  Calendar,
-  Home,
-  MessageSquare,
   Clock,
   RefreshCw
 } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.js';
 
 export default function InquiriesManager() {
   const { token } = useAuth();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchInquiries = async () => {
+  const fetchInquiries = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await apiFetch('/api/admin/inquiries', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -30,11 +25,13 @@ export default function InquiriesManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
-    fetchInquiries();
-  }, []);
+    // Network completion updates state asynchronously; this effect owns initial loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchInquiries();
+  }, [fetchInquiries]);
 
   return (
     <div className="space-y-6">
@@ -50,7 +47,7 @@ export default function InquiriesManager() {
         </div>
 
         <button
-          onClick={fetchInquiries}
+          onClick={() => { setLoading(true); void fetchInquiries(); }}
           className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl flex items-center gap-2 transition"
         >
           <RefreshCw className="w-3.5 h-3.5" />

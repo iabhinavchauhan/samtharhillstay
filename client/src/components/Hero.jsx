@@ -1,5 +1,3 @@
-import { NavLink } from 'react-router-dom'
-
 export default function Hero({ slide }) {
   return (
     <section className="hero-panel">

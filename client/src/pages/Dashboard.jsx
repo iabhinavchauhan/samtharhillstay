@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
-import { useUserAuth } from '../context/UserAuthContext';
+import { useUserAuth } from '../context/UserAuthContext.js';
 import { formatPrice } from '../utils/currency';
 import {
   User,
@@ -13,10 +13,8 @@ import {
   Lock,
   Trash2,
   CheckCircle,
-  AlertCircle,
   ExternalLink,
   MapPin,
-  Users,
   ChevronRight,
   Shield,
   Receipt,
@@ -49,7 +47,6 @@ export default function Dashboard() {
   const [bookings, setBookings] = useState([]);
   const [payments, setPayments] = useState([]);
   const [recentViews, setRecentViews] = useState([]);
-  const [dataLoading, setDataLoading] = useState(true);
 
   // Profile Edit states
   const [editingProfile, setEditingProfile] = useState(false);
@@ -84,7 +81,6 @@ export default function Dashboard() {
     if (!isAuthenticated) return;
 
     let isMounted = true;
-    setDataLoading(true);
 
     const loadData = async () => {
       try {
@@ -101,23 +97,22 @@ export default function Dashboard() {
         }
       } catch (err) {
         console.warn('Dashboard data fetch warning:', err);
-      } finally {
-        if (isMounted) setDataLoading(false);
       }
     };
 
-    loadData();
-
-    if (user) {
-      setEditName(user.name || '');
-      setEditPhone(user.phone || '');
-      setEditEmail(user.email || '');
-    }
+    void loadData();
 
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, user, fetchBookings, fetchPayments, fetchRecentViews]);
+  }, [isAuthenticated, fetchBookings, fetchPayments, fetchRecentViews]);
+
+  const beginProfileEdit = () => {
+    setEditName(user?.name || '');
+    setEditPhone(user?.phone || '');
+    setEditEmail(user?.email || '');
+    setEditingProfile(true);
+  };
 
   const handleTabChange = (tabId) => {
     setSearchParams({ tab: tabId });
@@ -281,7 +276,7 @@ export default function Dashboard() {
                 </div>
                 {!editingProfile && (
                   <button
-                    onClick={() => setEditingProfile(true)}
+                    onClick={beginProfileEdit}
                     className="flex items-center gap-1.5 rounded-lg border border-[#caa34b]/40 bg-[#f7f2e4] px-3 py-1.5 text-xs font-semibold text-[#7a5e1c] hover:bg-[#f1ead7] transition"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -534,6 +529,8 @@ export default function Dashboard() {
                         <img
                           src={item.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
                           alt={item.stay_name}
+                          loading="lazy"
+                          decoding="async"
                           className="h-28 w-full sm:w-36 rounded-2xl object-cover shrink-0"
                         />
                         <div className="flex-1 space-y-2">
@@ -680,6 +677,8 @@ export default function Dashboard() {
                         <img
                           src={stay.mainImage}
                           alt={stay.name}
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         />
                         <span className="absolute bottom-3 left-3 rounded-md bg-[#10281e]/85 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
@@ -743,6 +742,8 @@ export default function Dashboard() {
                         <img
                           src={booking.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
                           alt={booking.stay_name}
+                          loading="lazy"
+                          decoding="async"
                           className="h-14 w-14 rounded-xl object-cover shrink-0"
                         />
                         <div>
@@ -845,6 +846,8 @@ export default function Dashboard() {
                         <img
                           src={booking.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
                           alt={booking.stay_name}
+                          loading="lazy"
+                          decoding="async"
                           className="h-20 w-20 rounded-2xl object-cover shrink-0"
                         />
                         <div className="space-y-1">

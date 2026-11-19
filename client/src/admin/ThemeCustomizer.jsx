@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Palette,
   Type,
   Layout,
-  Sliders,
-  CheckCircle,
   RotateCcw,
   Sparkles,
-  Smartphone,
-  Eye
 } from 'lucide-react';
 
 export default function ThemeCustomizer({ theme, onChange, onReset }) {

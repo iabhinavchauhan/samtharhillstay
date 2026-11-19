@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useAuth } from './AuthContext';
+import { useState } from 'react';
+import { useAuth } from './AuthContext.js';
 import { Lock, User, ArrowRight, ShieldCheck, Mountain, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function AdminLogin({ onLoginSuccess }) {
+export default function AdminLogin() {
   const { login } = useAuth();
   // Initially empty - credentials are NOT prefilled or displayed
   const [username, setUsername] = useState('');
@@ -23,7 +23,6 @@ export default function AdminLogin({ onLoginSuccess }) {
 
     try {
       await login(username.trim(), password);
-      if (onLoginSuccess) onLoginSuccess();
     } catch (err) {
       setError(err.message || 'Login failed. Please verify credentials.');
     } finally {
@@ -32,12 +31,12 @@ export default function AdminLogin({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#07130e] px-4 py-8 relative overflow-hidden font-sans">
+    <div className="min-h-[100dvh] flex items-start justify-center bg-[#07130e] px-4 py-8 relative overflow-x-hidden overflow-y-auto font-sans sm:h-[100dvh] sm:min-h-0 sm:overflow-hidden sm:items-center">
       {/* Background High-res Scenery with Soft Dark Parallax Gradient */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-1000 opacity-25"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=2400&q=85')`
+          backgroundImage: `url('https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=1440&q=72')`
         }}
       />
       
@@ -48,13 +47,13 @@ export default function AdminLogin({ onLoginSuccess }) {
 
       {/* Main Login Card - Split Layout with Visual Showcase & Form */}
       <motion.div 
-        initial={{ opacity: 0, y: 25, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative w-full max-w-4xl bg-[#0f241a]/95 border border-white/15 rounded-3xl shadow-2xl backdrop-blur-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="relative w-full max-w-4xl bg-[#0f241a]/95 border border-white/15 rounded-3xl shadow-2xl backdrop-blur-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 z-10 sm:max-h-[calc(100dvh-4rem)]"
       >
         {/* Left Side: Pictures & Branding Showcase */}
-        <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-[#123123] to-[#0a1b13] border-r border-white/10 overflow-hidden">
+        <div className="relative hidden md:flex md:h-full flex-col justify-between p-10 bg-gradient-to-br from-[#123123] to-[#0a1b13] border-r border-white/10 overflow-hidden">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
             style={{
@@ -99,7 +98,7 @@ export default function AdminLogin({ onLoginSuccess }) {
         </div>
 
         {/* Right Side: Clean Login Form */}
-        <div className="p-8 sm:p-10 flex flex-col justify-center">
+        <div className="max-h-none overflow-visible p-8 sm:max-h-[calc(100dvh-4rem)] sm:overflow-y-auto sm:overscroll-contain sm:p-10 flex flex-col justify-center">
           <div className="text-center md:text-left mb-8">
             <div className="inline-flex md:hidden items-center justify-center w-14 h-14 rounded-2xl bg-[#caa34b]/20 border border-[#caa34b]/40 text-[#caa34b] mb-4">
               <Mountain className="w-7 h-7" />
@@ -131,7 +130,6 @@ export default function AdminLogin({ onLoginSuccess }) {
                 <input
                   type="text"
                   required
-                  autoFocus
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}

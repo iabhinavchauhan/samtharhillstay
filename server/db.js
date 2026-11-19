@@ -11,6 +11,7 @@ const adminSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: 'admin' },
   name: { type: String, default: '' },
+  auth_version: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -59,6 +60,17 @@ const contactSubmissionSchema = new mongoose.Schema({
   homestay: { type: String, default: '' },
   guests: { type: Number, default: 1 },
   message: { type: String, default: '' },
+  created_at: { type: Date, default: Date.now }
+});
+
+const guestReviewSchema = new mongoose.Schema({
+  author: { type: String, required: true, trim: true },
+  location: { type: String, default: '', trim: true },
+  stayName: { type: String, default: '' },
+  staySlug: { type: String, default: '' },
+  rating: { type: Number, min: 1, max: 5, default: 5 },
+  text: { type: String, required: true, trim: true },
+  image: { type: String, default: '' },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -127,6 +139,7 @@ const MongoSiteContent = mongoose.models.SiteContent || mongoose.model('SiteCont
 const MongoMedia = mongoose.models.Media || mongoose.model('Media', mediaSchema);
 const MongoRevision = mongoose.models.Revision || mongoose.model('Revision', revisionSchema);
 const MongoContactSubmission = mongoose.models.ContactSubmission || mongoose.model('ContactSubmission', contactSubmissionSchema);
+const MongoGuestReview = mongoose.models.GuestReview || mongoose.model('GuestReview', guestReviewSchema);
 const MongoCartItem = mongoose.models.CartItem || mongoose.model('CartItem', cartItemSchema);
 const MongoBooking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
 const MongoPayment = mongoose.models.Payment || mongoose.model('Payment', paymentSchema);
@@ -141,7 +154,8 @@ const memory = {
   siteContent: new Map(),
   media: [],
   revisions: [],
-  contactSubmissions: []
+  contactSubmissions: [],
+  guestReviews: []
 };
 
 function wrapQuery(val) {
@@ -203,6 +217,19 @@ export const Admin = {
     };
     memory.admins.push(doc);
     return doc;
+  },
+  async updatePassword(id, passwordHash) {
+    if (isMongoConnected) {
+      return MongoAdmin.findByIdAndUpdate(id, {
+        $set: { password: passwordHash },
+        $inc: { auth_version: 1 }
+      }, { new: true });
+    }
+    const admin = memory.admins.find((item) => item._id?.toString() === id?.toString());
+    if (!admin) return null;
+    admin.password = passwordHash;
+    admin.auth_version = (admin.auth_version || 0) + 1;
+    return { ...admin };
   },
   async findByIdAndDelete(id) {
     if (isMongoConnected) return MongoAdmin.findByIdAndDelete(id);
@@ -464,6 +491,29 @@ export const ContactSubmission = {
   }
 };
 
+export const GuestReview = {
+  find(query = {}) {
+    if (isMongoConnected) return MongoGuestReview.find(query);
+    return wrapQuery(memory.guestReviews.map((review) => ({ ...review })));
+  },
+  async create(data) {
+    if (isMongoConnected) return MongoGuestReview.create(data);
+    const doc = {
+      _id: 'review_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      ...data,
+      created_at: new Date()
+    };
+    memory.guestReviews.unshift(doc);
+    return doc;
+  },
+  async findByIdAndDelete(id) {
+    if (isMongoConnected) return MongoGuestReview.findByIdAndDelete(id);
+    const idx = memory.guestReviews.findIndex((review) => review._id?.toString() === id?.toString());
+    if (idx === -1) return null;
+    return memory.guestReviews.splice(idx, 1)[0];
+  }
+};
+
 /**
  * Repairs any Windows-1252 mojibake already persisted in MongoDB so that
  * legacy records render as clean English text instead of garbled symbols.
@@ -567,16 +617,27 @@ async function normaliseStoredFonts() {
 
 export async function connectDb() {
   const uri = process.env.MONGODB_URI;
+  const allowEphemeralStore = process.env.ALLOW_EPHEMERAL_DB === 'true' && process.env.NODE_ENV !== 'production';
+  const uriDatabaseName = uri?.match(/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/)?.[1]?.trim();
+  const databaseName = process.env.MONGODB_DB_NAME?.trim() || uriDatabaseName || 'samthar_db';
+
+  if ((!uri || !uri.trim()) && !allowEphemeralStore) {
+    throw new Error('MONGODB_URI is required. Set ALLOW_EPHEMERAL_DB=true only for temporary local development.');
+  }
+
   if (uri && uri.trim()) {
     try {
       mongoose.set('bufferCommands', false);
-      await mongoose.connect(uri.trim(), { serverSelectionTimeoutMS: 3000 });
+      await mongoose.connect(uri.trim(), { serverSelectionTimeoutMS: 5000, dbName: databaseName });
       isMongoConnected = true;
-      console.log('[MongoDB] Connected to database successfully.');
+      console.log(`[MongoDB] Connected to persistent database "${mongoose.connection.name}" successfully.`);
 
       const existingAdmin = await MongoAdmin.findOne({ username: 'admin' });
       if (!existingAdmin) {
-        const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const defaultPassword = process.env.ADMIN_PASSWORD;
+        if (!defaultPassword || defaultPassword.length < 12) {
+          throw new Error('Set a unique ADMIN_PASSWORD of at least 12 characters before initializing the first administrator.');
+        }
         const hashedPassword = await bcrypt.hash(defaultPassword, 10);
         await MongoAdmin.create({
           username: 'admin',
@@ -600,13 +661,26 @@ export async function connectDb() {
       await normaliseStoredFonts();
       return;
     } catch (err) {
+      if (mongoose.connection.readyState === 1) {
+        // A connected database with a failed seed/migration is an application error,
+        // not a reason to switch to volatile storage.
+        isMongoConnected = true;
+        throw err;
+      }
+      if (!allowEphemeralStore) {
+        isMongoConnected = false;
+        throw new Error(`MongoDB is unavailable; refusing to start with temporary storage because admin accounts would be lost on restart. ${err.message}`);
+      }
       console.warn('[MongoDB] Connection failed, using in-memory store:', err.message);
       isMongoConnected = false;
     }
   }
 
   console.log('[AI Studio] Initializing resilient in-memory store for Samthar...');
-  const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const defaultPassword = process.env.ADMIN_PASSWORD;
+  if (!defaultPassword || defaultPassword.length < 12) {
+    throw new Error('Set ADMIN_PASSWORD to a unique value of at least 12 characters before using the temporary admin store.');
+  }
   const hashedPassword = await bcrypt.hash(defaultPassword, 10);
   memory.admins = [
     {
@@ -710,6 +784,10 @@ export async function connectDb() {
     }
   ];
   console.log('[AI Studio] In-memory store ready. Default traveler account: traveler@samthar.com / password123');
+}
+
+export function getPersistenceStatus() {
+  return isMongoConnected ? 'mongodb' : 'ephemeral';
 }
 
 export function getDefaultSiteData() {

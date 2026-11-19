@@ -24,9 +24,10 @@ The frontend Vite server runs at `http://localhost:3000` and proxies API request
 
 ## Production deployment
 
-- Deploy the `server` directory as the Render web service. Use `npm install` as the build command and `npm start` as the start command. Render supplies `PORT`; configure `MONGODB_URI` and the other server credentials in Render's environment settings.
+- Deploy the `server` directory as the Render web service. Use `npm install` as the build command and `npm start` as the start command. Render supplies `PORT`; configure `MONGODB_URI`, `JWT_SECRET` (a unique random value of at least 32 characters), and `ADMIN_PASSWORD` (unique and at least 12 characters when initializing the first admin) in Render's environment settings. Set `MONGODB_DB_NAME` to the database containing the site's existing records; if omitted, the backend uses the URI's database name or `samthar_db`. The API refuses to start without MongoDB or a strong JWT secret in production, so it cannot silently replace saved admin accounts with temporary in-memory accounts or issue predictable login tokens. For local development only, `ALLOW_EPHEMERAL_DB=true` opts into temporary storage.
 - Deploy the frontend to Cloudflare Pages from the repository root with build command `npm ci && npm run build` and output directory `client/dist`.
 - In Cloudflare Pages, set `VITE_API_BASE_URL` to the Render service origin, for example `https://your-service-name.onrender.com`. Use the actual Render hostname, without a trailing slash or `/api` suffix, then trigger a new Pages deployment. The frontend appends `/api/...` paths to this origin.
+- After deployment, open `<Render service origin>/api/health`; it should return `{"status":"ok","persistence":"mongodb"}`. If it reports `unavailable` or `ephemeral`, verify Render's `MONGODB_URI` and `MONGODB_DB_NAME` before creating admin accounts or publishing content.
 - For local frontend development from `client`, Vite proxies `/api` requests to `http://localhost:5000`; set `PORT=5000` in `server/.env` or override the Vite proxy target.
 
 ---

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useUserAuth } from '../context/UserAuthContext';
+import { useUserAuth } from '../context/UserAuthContext.js';
 import { apiFetch } from '../utils/api';
 import { formatPrice } from '../utils/currency';
 import {
@@ -9,16 +9,12 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
-  Calendar,
-  Users,
   Lock,
-  Sparkles,
-  Receipt,
-  HelpCircle
+  Receipt
 } from 'lucide-react';
 
 export default function Checkout() {
-  const { user, token, cart, cartTotal, isAuthenticated, loading: authLoading, clearCart } = useUserAuth();
+  const { user, token, cart, isAuthenticated, loading: authLoading } = useUserAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,9 +31,9 @@ export default function Checkout() {
   const [pendingOrderData, setPendingOrderData] = useState(null);
 
   // Guest details form state
-  const [guestName, setGuestName] = useState('');
-  const [guestEmail, setGuestEmail] = useState('');
-  const [guestPhone, setGuestPhone] = useState('');
+  const [guestName, setGuestName] = useState(user?.name || '');
+  const [guestEmail, setGuestEmail] = useState(user?.email || '');
+  const [guestPhone, setGuestPhone] = useState(user?.phone || '');
   const [specialRequests, setSpecialRequests] = useState('');
 
   useEffect(() => {
@@ -45,14 +41,6 @@ export default function Checkout() {
       navigate('/login', { state: { from: { pathname: '/checkout', state: location.state } } });
     }
   }, [authLoading, isAuthenticated, navigate, location.state]);
-
-  useEffect(() => {
-    if (user) {
-      setGuestName(user.name || '');
-      setGuestEmail(user.email || '');
-      setGuestPhone(user.phone || '');
-    }
-  }, [user]);
 
   // Load Razorpay Script dynamically
   useEffect(() => {
@@ -388,6 +376,8 @@ export default function Checkout() {
                   <img
                     src={item.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
                     alt={item.stay_name}
+                    loading="lazy"
+                    decoding="async"
                     className="h-16 w-16 rounded-xl object-cover shrink-0"
                   />
                   <div className="flex-1 space-y-1">

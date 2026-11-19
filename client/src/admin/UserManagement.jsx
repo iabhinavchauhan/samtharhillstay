@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Trash2, Shield, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { Users, UserPlus, Trash2, AlertCircle, CheckCircle, KeyRound } from 'lucide-react';
+import { useAuth } from './AuthContext.js';
 import { apiFetch } from '../utils/api';
 
 export default function UserManagement() {
-  const { token, user: currentUser } = useAuth();
+  const { token, user: currentUser, updateToken } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [replacementPassword, setReplacementPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState('');
@@ -15,24 +21,25 @@ export default function UserManagement() {
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await apiFetch('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError('Failed to fetch users.');
+      setError(err.message || 'Failed to fetch users.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    // Network completion updates state asynchronously; this effect owns initial loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchUsers();
+  }, [fetchUsers]);
 
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -85,6 +92,41 @@ export default function UserManagement() {
     }
   };
 
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    setPasswordError('');
+    setMsg('');
+    if (replacementPassword !== confirmPassword) {
+      setPasswordError('The new password and confirmation do not match.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const res = await apiFetch('/api/admin/account/password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword, newPassword: replacementPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update password.');
+
+      setMsg('Password updated. Sign in next time with your new password.');
+      setCurrentPassword('');
+      setReplacementPassword('');
+      setConfirmPassword('');
+      setShowPasswordModal(false);
+      updateToken(data.token);
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to update password.');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#10281e] p-5 rounded-2xl border border-white/10">
@@ -98,13 +140,21 @@ export default function UserManagement() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2.5 bg-[#caa34b] hover:bg-[#d8b85e] text-[#10281e] font-semibold text-xs rounded-xl flex items-center gap-2 transition shadow-md"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add New Admin / Editor
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setPasswordError(''); setShowPasswordModal(true); }}
+            className="px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl flex items-center gap-2 transition"
+          >
+            <KeyRound className="w-4 h-4" /> Change My Password
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2.5 bg-[#caa34b] hover:bg-[#d8b85e] text-[#10281e] font-semibold text-xs rounded-xl flex items-center gap-2 transition shadow-md"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add New Admin / Editor
+          </button>
+        </div>
       </div>
 
       {msg && (
@@ -134,7 +184,7 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {users.map((u) => (
+              {loading ? <tr><td colSpan={4} className="px-6 py-8 text-center text-white/50">Loading administrators…</td></tr> : users.map((u) => (
                 <tr key={u.id} className="hover:bg-white/[0.02] transition">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -218,6 +268,7 @@ export default function UserManagement() {
                 <input
                   type="password"
                   required
+                  minLength={12}
                   placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -251,6 +302,36 @@ export default function UserManagement() {
                 >
                   Save User
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-md rounded-3xl border border-white/15 bg-[#10281e] p-6 shadow-2xl">
+            <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-white">
+              <KeyRound className="h-5 w-5 text-[#caa34b]" /> Change your password
+            </h3>
+            <p className="mb-5 text-xs leading-5 text-white/60">Use a unique password with at least 12 characters. A password manager can generate and save one.</p>
+            {passwordError && <p role="alert" className="mb-4 rounded-xl border border-red-400/30 bg-red-950/50 p-3 text-xs text-red-200">{passwordError}</p>}
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <label className="block text-xs font-semibold text-white/70">
+                Current password
+                <input type="password" required autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-[#0a1711] px-4 py-3 text-sm text-white focus:border-[#caa34b] focus:outline-none" />
+              </label>
+              <label className="block text-xs font-semibold text-white/70">
+                New password
+                <input type="password" required minLength={12} maxLength={128} autoComplete="new-password" value={replacementPassword} onChange={(event) => setReplacementPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-[#0a1711] px-4 py-3 text-sm text-white focus:border-[#caa34b] focus:outline-none" />
+              </label>
+              <label className="block text-xs font-semibold text-white/70">
+                Confirm new password
+                <input type="password" required minLength={12} maxLength={128} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-[#0a1711] px-4 py-3 text-sm text-white focus:border-[#caa34b] focus:outline-none" />
+              </label>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowPasswordModal(false)} className="rounded-xl px-4 py-2 text-xs text-white/60 hover:text-white">Cancel</button>
+                <button type="submit" disabled={isChangingPassword} className="rounded-xl bg-[#caa34b] px-4 py-2 text-xs font-bold text-[#10281e] hover:bg-[#d8b85e] disabled:opacity-50">{isChangingPassword ? 'Updating...' : 'Update password'}</button>
               </div>
             </form>
           </div>

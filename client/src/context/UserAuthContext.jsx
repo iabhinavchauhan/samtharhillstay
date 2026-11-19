@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/api';
-
-const UserAuthContext = createContext(null);
+import { UserAuthContext } from './UserAuthContext.js';
 
 export function UserAuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('samthar_user_token') || '');
   const [user, setUser] = useState(() => {
+    if (!localStorage.getItem('samthar_user_token')) return null;
     try {
       const saved = localStorage.getItem('samthar_user_profile');
       return saved ? JSON.parse(saved) : null;
@@ -13,21 +13,23 @@ export function UserAuthProvider({ children }) {
       return null;
     }
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('samthar_user_token')));
   const [cart, setCart] = useState([]);
   const [cartTotal, setCartTotal] = useState(0);
 
+  const logout = useCallback(() => {
+    setToken('');
+    setUser(null);
+    setCart([]);
+    setCartTotal(0);
+    setLoading(false);
+    localStorage.removeItem('samthar_user_token');
+    localStorage.removeItem('samthar_user_profile');
+  }, []);
+
   // Sync token and user profile
   useEffect(() => {
-    if (!token) {
-      setUser(null);
-      setCart([]);
-      setCartTotal(0);
-      setLoading(false);
-      localStorage.removeItem('samthar_user_token');
-      localStorage.removeItem('samthar_user_profile');
-      return;
-    }
+    if (!token) return undefined;
 
     localStorage.setItem('samthar_user_token', token);
 
@@ -51,13 +53,14 @@ export function UserAuthProvider({ children }) {
           setCartTotal(cartData.totalAmount || 0);
         }
       })
-      .catch(() => {
-        logout();
+      .catch((error) => {
+        if ([401, 403].includes(error.status)) logout();
+        else console.warn('User session verification temporarily unavailable:', error.message);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [token]);
+  }, [token, logout]);
 
   const login = async (email, password) => {
     const res = await apiFetch('/api/user/login', {
@@ -91,15 +94,6 @@ export function UserAuthProvider({ children }) {
     localStorage.setItem('samthar_user_token', data.token);
     localStorage.setItem('samthar_user_profile', JSON.stringify(data.user));
     return data.user;
-  };
-
-  const logout = () => {
-    setToken('');
-    setUser(null);
-    setCart([]);
-    setCartTotal(0);
-    localStorage.removeItem('samthar_user_token');
-    localStorage.removeItem('samthar_user_profile');
   };
 
   const updateProfile = async (updates) => {
@@ -290,12 +284,4 @@ export function UserAuthProvider({ children }) {
       {children}
     </UserAuthContext.Provider>
   );
-}
-
-export function useUserAuth() {
-  const context = useContext(UserAuthContext);
-  if (!context) {
-    throw new Error('useUserAuth must be used within a UserAuthProvider');
-  }
-  return context;
 }

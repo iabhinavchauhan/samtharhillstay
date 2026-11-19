@@ -41,15 +41,21 @@ export async function apiFetch(endpoint, options) {
   }
 
   let response
-  try {
-    response = await fetch(url, options)
-  } catch (error) {
-    console.error('[API] Network request failed', {
-      endpoint,
-      apiOrigin: configuredBaseUrl || window.location.origin,
-      message: error.message,
-    })
-    throw new Error(`Could not reach the API for ${endpoint}. Check the backend URL and service status.`)
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      response = await fetch(url, options)
+      break
+    } catch (error) {
+      // Render may be waking a sleeping instance. Login is safe to retry once
+      // because it does not create or modify server data.
+      if (endpoint === '/api/auth/login' && attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1200))
+        continue
+      }
+      const apiOrigin = configuredBaseUrl || window.location.origin
+      console.error('[API] Network request failed', { endpoint, apiOrigin, message: error.message })
+      throw new Error(`Could not reach ${apiOrigin} for ${endpoint}. Check that the backend service is online.`, { cause: error })
+    }
   }
 
   const contentType = response.headers.get('content-type') || ''
@@ -63,7 +69,7 @@ export async function apiFetch(endpoint, options) {
       contentType: contentType || '(missing)',
       message: error.message,
     })
-    throw new Error(`Could not read the API response for ${endpoint}.`)
+    throw new Error(`Could not read the API response for ${endpoint}.`, { cause: error })
   }
   const isJson = /(?:application|text)\/(?:[\w.+-]*\+)?json\b/i.test(contentType)
 
@@ -101,7 +107,7 @@ export async function apiFetch(endpoint, options) {
   let data
   try {
     data = body ? JSON.parse(body) : null
-  } catch (error) {
+  } catch {
     logResponseProblem(endpoint, response.status, contentType, body, 'Invalid JSON response')
     throw new Error(`The API returned invalid JSON for ${endpoint}.`)
   }

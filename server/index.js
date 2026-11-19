@@ -21,7 +21,9 @@ import {
   Media,
   Revision,
   ContactSubmission,
-  getDefaultSiteData
+  GuestReview,
+  getDefaultSiteData,
+  getPersistenceStatus
 } from './db.js';
 import { sanitiseContentFonts } from './utils/theme.js';
 import { describeRazorpayError, validateRazorpayCredentials, cleanCredential, razorpaySetupInstructions, checkRazorpayCredentials } from './utils/razorpay.js';
@@ -33,7 +35,13 @@ const __dirname = path.dirname(__filename);
 
 export const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'samthar-secret-token-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET?.trim() || (process.env.NODE_ENV === 'production' ? '' : 'local-development-only-jwt-secret-change-before-deploy');
+export function assertJwtSecret(secret, environment = process.env.NODE_ENV) {
+  if (environment === 'production' && secret.length < 32) {
+    throw new Error('JWT_SECRET must be configured with at least 32 characters before starting in production.');
+  }
+}
+assertJwtSecret(JWT_SECRET);
 const ENV_FILE = path.join(__dirname, '.env');
 
 let RAZORPAY_KEY_ID = cleanCredential(process.env.RAZORPAY_KEY_ID);
@@ -89,7 +97,7 @@ function watchEnvFile() {
   }
 }
 
-watchEnvFile();
+if (process.env.NODE_ENV !== 'test') watchEnvFile();
 
 app.use(cors({
   origin: '*',
@@ -139,12 +147,21 @@ export function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Unauthorized. Admin token is missing.' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, async (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Session expired or invalid token. Please log in again.' });
     }
-    req.user = user;
-    next();
+    try {
+      const admin = await Admin.findById(user.id);
+      if (!admin || Number(user.authVersion || 0) !== Number(admin.auth_version || 0)) {
+        return res.status(401).json({ error: 'Admin session is no longer valid. Please sign in again.' });
+      }
+      req.user = user;
+      next();
+    } catch (lookupError) {
+      console.error('[Admin Auth] Could not verify the current session:', lookupError);
+      res.status(503).json({ error: 'Admin authentication is temporarily unavailable.' });
+    }
   });
 }
 
@@ -874,10 +891,16 @@ app.get('/api/payments', authenticateUser, async (req, res) => {
 
 // 1. Get Live Published Website Content
 app.get('/api/content/published', async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   try {
     const doc = await SiteContent.findOne({ id: 'published' }).lean();
     if (!doc || !doc.data) {
-      return res.status(200).type('application/json').json(getDefaultSiteData());
+      return res.status(503).type('application/json').json({
+        success: false,
+        error: 'Published content is missing from persistent storage. Check the backend database connection.'
+      });
     }
     res.status(200).type('application/json').json(sanitiseContentFonts(doc.data));
   } catch (err) {
@@ -886,6 +909,50 @@ app.get('/api/content/published', async (req, res) => {
       success: false,
       error: 'Published site content is temporarily unavailable.'
     });
+  }
+});
+
+app.get('/api/health', (req, res) => {
+  const persistence = getPersistenceStatus();
+  const ready = persistence === 'mongodb' || process.env.ALLOW_EPHEMERAL_DB === 'true';
+  res.set('Cache-Control', 'no-store');
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'ok' : 'unavailable',
+    persistence: ready ? persistence : 'unavailable'
+  });
+});
+
+app.get('/api/reviews', async (req, res) => {
+  try {
+    const reviews = await GuestReview.find().sort({ created_at: -1 }).lean();
+    res.json(reviews.map((review) => ({ ...review, id: review._id })));
+  } catch (err) {
+    console.error('[Error] Fetching guest reviews:', err);
+    res.status(500).json({ error: 'Failed to load guest reviews.' });
+  }
+});
+
+app.post('/api/reviews', async (req, res) => {
+  try {
+    const author = String(req.body.author || '').trim();
+    const text = String(req.body.text || '').trim();
+    const rating = Number(req.body.rating ?? 5);
+    if (!author || author.length > 100 || !text || text.length > 3000 || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Please provide a name, a review under 3000 characters, and a rating from 1 to 5.' });
+    }
+    const review = await GuestReview.create({
+      author,
+      location: String(req.body.location || '').trim().slice(0, 120),
+      stayName: String(req.body.stayName || '').trim().slice(0, 120),
+      staySlug: String(req.body.staySlug || '').trim().slice(0, 120),
+      rating,
+      text,
+      image: typeof req.body.image === 'string' ? req.body.image.slice(0, 5_000_000) : ''
+    });
+    res.status(201).json({ ...(review.toObject?.() ?? review), id: review._id });
+  } catch (err) {
+    console.error('[Error] Saving guest review:', err);
+    res.status(500).json({ error: 'Failed to save your review.' });
   }
 });
 
@@ -931,9 +998,9 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: admin._id, username: admin.username, role: admin.role, name: admin.name },
+      { id: admin._id, username: admin.username, role: admin.role, name: admin.name, authVersion: admin.auth_version || 0 },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '8h' }
     );
 
     res.json({
@@ -965,6 +1032,44 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/api/admin/account/password', authenticateToken, async (req, res) => {
+  try {
+    const currentPassword = String(req.body.currentPassword || '');
+    const newPassword = String(req.body.newPassword || '');
+    if (!currentPassword || newPassword.length < 12 || newPassword.length > 128) {
+      return res.status(400).json({ error: 'Enter your current password and a new password between 12 and 128 characters.' });
+    }
+
+    const admin = await Admin.findById(req.user.id);
+    if (!admin) return res.status(404).json({ error: 'Administrator account not found.' });
+    if (!await bcrypt.compare(currentPassword, admin.password)) {
+      return res.status(400).json({ error: 'Current password is incorrect.' });
+    }
+    if (await bcrypt.compare(newPassword, admin.password)) {
+      return res.status(400).json({ error: 'Choose a new password you have not used for this account.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const updatedAdmin = await Admin.updatePassword(admin._id, passwordHash);
+    if (!updatedAdmin) return res.status(404).json({ error: 'Administrator account not found.' });
+    const token = jwt.sign(
+      {
+        id: updatedAdmin._id,
+        username: updatedAdmin.username,
+        role: updatedAdmin.role,
+        name: updatedAdmin.name,
+        authVersion: updatedAdmin.auth_version || 0
+      },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+    res.json({ success: true, token, message: 'Password updated. Other admin sessions have been signed out.' });
+  } catch (err) {
+    console.error('[Error] Updating admin password:', err);
+    res.status(500).json({ error: 'Failed to update administrator password.' });
+  }
+});
+
 // -------------------------------------------------------------
 // SECURE ADMIN CONTENT & DRAFT ROUTES
 // -------------------------------------------------------------
@@ -974,8 +1079,12 @@ app.get('/api/admin/content/draft', authenticateToken, async (req, res) => {
     const draftDoc = await SiteContent.findOne({ id: 'draft' }).lean();
     const pubDoc = await SiteContent.findOne({ id: 'published' }).lean();
 
-    const draftData = draftDoc?.data || pubDoc?.data || getDefaultSiteData();
-    const publishedData = pubDoc?.data || getDefaultSiteData();
+    if (!pubDoc?.data) {
+      return res.status(503).json({ error: 'Published content is missing from persistent storage.' });
+    }
+
+    const draftData = draftDoc?.data || pubDoc.data;
+    const publishedData = pubDoc.data;
 
     res.json({
       draft: sanitiseContentFonts(draftData),
@@ -1244,6 +1353,9 @@ app.post('/api/admin/users', authenticateToken, async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
+    if (String(password).length < 12 || String(password).length > 128) {
+      return res.status(400).json({ error: 'Administrator passwords must be between 12 and 128 characters.' });
+    }
 
     const existing = await Admin.findOne({ username: username.trim() });
     if (existing) {
@@ -1283,6 +1395,25 @@ app.get('/api/admin/inquiries', authenticateToken, async (req, res) => {
     res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load inquiries.' });
+  }
+});
+
+app.get('/api/admin/reviews', authenticateToken, async (req, res) => {
+  try {
+    const reviews = await GuestReview.find().sort({ created_at: -1 }).lean();
+    res.json(reviews.map((review) => ({ ...review, id: review._id })));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load guest reviews.' });
+  }
+});
+
+app.delete('/api/admin/reviews/:id', authenticateToken, async (req, res) => {
+  try {
+    const deleted = await GuestReview.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Review not found.' });
+    res.json({ success: true, message: 'Review deleted.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete review.' });
   }
 });
 

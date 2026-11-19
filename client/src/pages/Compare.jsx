@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { CompareContext } from '../context/CompareContext'
+import { CompareContext } from '../context/CompareContext.js'
 
 export default function Compare() {
   const { compareItems } = useContext(CompareContext)

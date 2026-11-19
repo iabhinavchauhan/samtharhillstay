@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Image, X } from 'lucide-react';
 import MediaLibrary from './MediaLibrary';
 

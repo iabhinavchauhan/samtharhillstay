@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useUserAuth } from '../context/UserAuthContext';
+import { useUserAuth } from '../context/UserAuthContext.js';
 import { Eye, EyeOff, UserPlus, Lock, Mail, User, Phone, ArrowRight, ShieldCheck, Sparkles, Mountain } from 'lucide-react';
 import { motion } from 'framer-motion';
 

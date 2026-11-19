@@ -1,32 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { apiFetch } from '../utils/api';
 import {
   LayoutDashboard,
   Home,
   Building2,
-  Utensils,
   Palette,
   Image as ImageIcon,
   Menu,
-  Globe,
   Users,
   History,
   Inbox,
+  MessageSquare,
   Eye,
   Save,
   Send,
   LogOut,
-  Sparkles,
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  ChevronRight,
-  Shield,
-  Layers,
-  Settings,
   CreditCard
 } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.js';
 import AdminLogin from './AdminLogin';
 import MediaLibrary from './MediaLibrary';
 import ThemeCustomizer from './ThemeCustomizer';
@@ -36,6 +30,7 @@ import NavFooterSeoManager from './NavFooterSeoManager';
 import RevisionBackup from './RevisionBackup';
 import UserManagement from './UserManagement';
 import InquiriesManager from './InquiriesManager';
+import ReviewsManager from './ReviewsManager';
 import LivePreviewModal from './LivePreviewModal';
 import PaymentGatewaySettings from './PaymentGatewaySettings';
 
@@ -44,7 +39,6 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [content, setContent] = useState(null);
-  const [publishedContent, setPublishedContent] = useState(null);
   const [loadingContent, setLoadingContent] = useState(true);
 
   // Status & action state
@@ -54,12 +48,12 @@ export default function AdminDashboard() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
-  };
+  }, []);
 
-  const fetchDraftData = async () => {
+  const fetchDraftData = useCallback(async () => {
     try {
       setLoadingContent(true);
       const res = await apiFetch('/api/admin/content/draft', {
@@ -69,20 +63,19 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data.error);
 
       setContent(data.draft);
-      setPublishedContent(data.published);
       setHasUnsavedChanges(false);
     } catch (err) {
       showToast(err.message || 'Failed to load content', 'error');
     } finally {
       setLoadingContent(false);
     }
-  };
+  }, [showToast, token]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchDraftData();
-    }
-  }, [isAuthenticated]);
+    if (!isAuthenticated) return undefined;
+    const timer = window.setTimeout(() => { void fetchDraftData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchDraftData, isAuthenticated]);
 
   // Handle local content modifications
   const handleContentChange = (updated) => {
@@ -107,7 +100,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data.error);
 
       setHasUnsavedChanges(false);
-      showToast('Draft changes saved securely to database!');
+      showToast('Draft saved to the database. Select Publish Live to show these changes on the website.');
     } catch (err) {
       showToast(err.message || 'Failed to save draft', 'error');
     } finally {
@@ -132,7 +125,6 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setPublishedContent(content);
       setHasUnsavedChanges(false);
       showToast('🚀 Changes published live! All website visitors can see updates now.');
     } catch (err) {
@@ -154,7 +146,7 @@ export default function AdminDashboard() {
   }
 
   if (!isAuthenticated) {
-    return <AdminLogin onLoginSuccess={fetchDraftData} />;
+    return <AdminLogin />;
   }
 
   const navMenuItems = [
@@ -165,15 +157,16 @@ export default function AdminDashboard() {
     { id: 'media', label: 'Media Library', icon: ImageIcon },
     { id: 'nav-footer', label: 'Header, Footer & SEO', icon: Menu },
     { id: 'inquiries', label: 'Guest Inquiries & Leads', icon: Inbox },
+    { id: 'reviews', label: 'Guest Reviews & Feedback', icon: MessageSquare },
     { id: 'payments', label: 'Payments & Gateway', icon: CreditCard },
     { id: 'users', label: 'Admin Accounts', icon: Users },
     { id: 'revisions', label: 'Revisions & Backups', icon: History }
   ];
 
   return (
-    <div className="min-h-screen bg-[#07130e] text-white flex flex-col font-sans">
+    <div className="h-[100dvh] overflow-hidden bg-[#07130e] text-white flex flex-col font-sans">
       {/* Top Header Navbar */}
-      <header className="h-16 bg-[#0d1f17] border-b border-white/10 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
+      <header className="h-16 shrink-0 bg-[#0d1f17] border-b border-white/10 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <a
             href="/"
@@ -238,9 +231,9 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main Admin Workspace Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left Sidebar Navigation */}
-        <aside className="w-64 bg-[#0a1711] border-r border-white/10 flex flex-col justify-between shrink-0 hidden md:flex">
+        <aside className="hidden h-full w-64 shrink-0 flex-col justify-between overflow-y-auto border-r border-white/10 bg-[#0a1711] md:flex">
           <div className="p-4 space-y-1">
             <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">
               Management Portal
@@ -279,7 +272,7 @@ export default function AdminDashboard() {
         </aside>
 
         {/* Mobile Horizontal Navigation */}
-        <div className="md:hidden flex overflow-x-auto bg-[#0a1711] border-b border-white/10 p-2 gap-1 shrink-0">
+        <div className="flex w-full shrink-0 gap-1 overflow-x-auto border-b border-white/10 bg-[#0a1711] p-2 md:hidden">
           {navMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -299,9 +292,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Content View Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#050d09]">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#050d09] p-4 sm:p-8">
           <div className="max-w-6xl mx-auto">
-            {loadingContent ? (
+            {activeTab === 'reviews' ? (
+              <ReviewsManager />
+            ) : loadingContent ? (
               <div className="py-24 text-center text-white/40 text-sm">
                 Fetching website configurations from database...
               </div>
@@ -485,7 +480,6 @@ export default function AdminDashboard() {
       <LivePreviewModal
         isOpen={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        previewData={content}
         onPublish={handlePublish}
       />
 

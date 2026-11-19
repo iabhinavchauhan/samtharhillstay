@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import { Link } from 'react-router-dom'
-import { CompareContext } from '../context/CompareContext'
-import { WishlistContext } from '../context/WishlistContext'
+import { CompareContext } from '../context/CompareContext.js'
+import { WishlistContext } from '../context/WishlistContext.js'
 
 export default function AdventureCard({ item, panelless = false }) {
   const { toggleWishlist, wishlist } = useContext(WishlistContext)

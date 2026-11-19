@@ -1,25 +1,6 @@
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../utils/api'
-
-export const ResortContext = createContext({
-  theme: 'dark',
-  siteData: null,
-  siteDataError: '',
-  retrySiteData: () => {},
-  loading: true,
-  wishlist: [],
-  favorites: [],
-  reviews: [],
-  recentViews: [],
-  bookingDraft: {},
-  toggleWishlist: () => {},
-  toggleFavorite: () => {},
-  addReview: () => {},
-  addRecentView: () => {},
-  updateBookingDraft: () => {},
-  homestays: [],
-  foodItems: [],
-})
+import { ResortContext } from './ResortContext.js'
 
 function loadStorage(key, fallback) {
   try {
@@ -109,9 +90,24 @@ export function ResortProvider({ children }) {
     }
   }, [retryCount])
 
+  // Keep an already-open public page in sync after a publish from another tab/device.
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        setRetryCount((count) => count + 1)
+      }
+    }
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    const refreshInterval = window.setInterval(refreshWhenVisible, 60_000)
+    return () => {
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.clearInterval(refreshInterval)
+    }
+  }, [])
+
   const [wishlist, setWishlist] = useState(loadStorage('wishlist', []))
   const [favorites, setFavorites] = useState(loadStorage('favorites', []))
-  const [reviews, setReviews] = useState(() => loadStorage('reviews', []))
+  const [reviews, setReviews] = useState([])
   const [recentViews, setRecentViews] = useState(loadStorage('recentViews', []))
   const [bookingDraft, setBookingDraft] = useState(
     loadStorage('bookingDraft', {
@@ -132,8 +128,16 @@ export function ResortProvider({ children }) {
   }, [favorites])
 
   useEffect(() => {
-    saveStorage('reviews', reviews)
-  }, [reviews])
+    let isCurrentRequest = true
+    apiFetch('/api/reviews')
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Could not load reviews.')
+        if (isCurrentRequest) setReviews(Array.isArray(data) ? data : [])
+      })
+      .catch((error) => console.error('Could not load guest reviews:', error))
+    return () => { isCurrentRequest = false }
+  }, [])
 
   useEffect(() => {
     saveStorage('recentViews', recentViews)
@@ -143,41 +147,43 @@ export function ResortProvider({ children }) {
     saveStorage('bookingDraft', bookingDraft)
   }, [bookingDraft])
 
-  const toggleWishlist = (slug) => {
+  const toggleWishlist = useCallback((slug) => {
     setWishlist((current) =>
       current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug],
     )
-  }
+  }, [])
 
-  const toggleFavorite = (id) => {
+  const toggleFavorite = useCallback((id) => {
     setFavorites((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     )
-  }
+  }, [])
 
-  const addReview = useCallback((review) => {
-    const nextReviews = [{ id: `r-${Date.now()}`, ...review }, ...reviews]
-    try {
-      saveStorage('reviews', nextReviews)
-    } catch {
-      throw new Error('Your review could not be saved.')
-    }
-    setReviews(nextReviews)
-  }, [reviews])
+  const addReview = useCallback(async (review) => {
+    const res = await apiFetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(review),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Your review could not be saved.')
+    setReviews((current) => [data, ...current.filter((item) => item.id !== data.id)])
+    return data
+  }, [])
 
-  const addRecentView = (slug) => {
+  const addRecentView = useCallback((slug) => {
     setRecentViews((current) => {
       const next = [slug, ...current.filter((item) => item !== slug)]
       return next.slice(0, 5)
     })
-  }
+  }, [])
 
-  const updateBookingDraft = (patch) => {
+  const updateBookingDraft = useCallback((patch) => {
     setBookingDraft((current) => ({ ...current, ...patch }))
-  }
+  }, [])
 
-  const homestays = siteData?.homestays || []
-  const foodItems = siteData?.foodItems || []
+  const homestays = useMemo(() => siteData?.homestays || [], [siteData])
+  const foodItems = useMemo(() => siteData?.foodItems || [], [siteData])
 
   const value = useMemo(
     () => ({
@@ -198,7 +204,7 @@ export function ResortProvider({ children }) {
       homestays,
       foodItems,
     }),
-    [siteData, loading, siteDataError, retrySiteData, wishlist, favorites, reviews, recentViews, bookingDraft, addReview, homestays, foodItems],
+    [siteData, loading, siteDataError, retrySiteData, wishlist, toggleWishlist, favorites, toggleFavorite, reviews, addReview, recentViews, addRecentView, bookingDraft, updateBookingDraft, homestays, foodItems],
   )
 
   return <ResortContext.Provider value={value}>{children}</ResortContext.Provider>

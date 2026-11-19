@@ -1,6 +1,6 @@
-import { useContext, useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { ResortContext } from '../context/ResortContext'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { ResortContext } from '../context/ResortContext.js'
 import { formatPrice } from '../utils/currency'
 import { apiFetch } from '../utils/api'
 import { homestays as defaultHomestays } from '../data/resortData'
@@ -153,7 +153,7 @@ export default function Home() {
 
   const stays = (siteData?.homestays && siteData.homestays.length >= 3) ? siteData.homestays : defaultHomestays
 
-  const heroImages = hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=2200&q=85']
+  const heroImages = useMemo(() => hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=1600&q=75'], [hero.images])
 
   const [heroImageIndex, setHeroImageIndex] = useState(0)
   const [activeStayImage, setActiveStayImage] = useState(null)
@@ -236,7 +236,7 @@ export default function Home() {
     }
   }
 
-  const submitReview = (event) => {
+  const submitReview = async (event) => {
     event.preventDefault()
     setReviewMessage({ type: '', text: '' })
     if (!reviewForm.author.trim() || !reviewForm.staySlug || !reviewForm.text.trim()) {
@@ -245,7 +245,7 @@ export default function Home() {
     }
     setIsSavingReview(true)
     try {
-      addReview({
+      await addReview({
         author: reviewForm.author.trim(),
         location: reviewForm.location.trim(),
         stayName: reviewForm.staySlug,
@@ -565,6 +565,10 @@ export default function Home() {
                 </div>
                 <label className="review-label sm:col-span-2">Your experience
                   <textarea rows={3} className="review-input" value={reviewForm.text} onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })} required />
+                </label>
+                <label className="review-label sm:col-span-2">Photo (optional)
+                  <input ref={reviewPhotoInput} type="file" accept="image/*" onChange={handleReviewPhoto} className="review-input" />
+                  {reviewPhoto && <span className="mt-1 block text-xs text-emerald-800">Photo ready to submit.</span>}
                 </label>
                 <button type="submit" disabled={isSavingReview} className="rounded-full bg-[#173528] px-5 py-3 text-sm font-bold text-white sm:col-span-2 hover:bg-[#245039]">
                   {isSavingReview ? 'Saving...' : 'Share your review'}

@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ResortContext } from '../context/ResortContext'
+import { ResortContext } from '../context/ResortContext.js'
 
 export default function Reviews() {
   const { reviews, addReview } = useContext(ResortContext)
@@ -20,10 +20,14 @@ export default function Reviews() {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.author || !form.location || !form.text) return
-    addReview(form)
-    setForm({ author: '', location: '', rating: 5, text: '' })
+    try {
+      await addReview(form)
+      setForm({ author: '', location: '', rating: 5, text: '' })
+    } catch (error) {
+      window.alert(error.message || 'Your review could not be saved.')
+    }
   }
 
   return (
@@ -122,7 +126,7 @@ export default function Reviews() {
       <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {reviews.map((review) => (
           <motion.article key={review.id} whileHover={{ y: -4 }} className="rounded-[32px] border border-smoke/10 bg-smoke/5 p-8 shadow-soft">
-            {review.image && <img src={review.image} alt={`Photo shared by ${review.author}`} className="mb-6 max-h-64 w-full rounded-2xl object-cover" />}
+            {review.image && <img src={review.image} alt={`Photo shared by ${review.author}`} loading="lazy" decoding="async" className="mb-6 max-h-64 w-full rounded-2xl object-cover" />}
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold text-cream">{review.author}</h2>

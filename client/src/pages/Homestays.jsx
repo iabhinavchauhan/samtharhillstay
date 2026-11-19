@@ -1,7 +1,7 @@
 import { useContext } from "react"
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
-import { ResortContext } from "../context/ResortContext"
+import { ResortContext } from "../context/ResortContext.js"
 import { resolveImage } from "../utils/resolveImage"
 import { formatPrice } from "../utils/currency"
 

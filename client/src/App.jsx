@@ -1,8 +1,8 @@
 import { lazy, Suspense, useContext } from 'react'
 import { BrowserRouter, Route, Routes, Navigate, Outlet } from 'react-router-dom'
-import { ResortProvider } from './context/ResortContext'
-import { AuthProvider } from './admin/AuthContext'
-import { UserAuthProvider } from './context/UserAuthContext'
+import { ResortProvider } from './context/ResortContext.jsx'
+import { AuthProvider } from './admin/AuthContext.jsx'
+import { UserAuthProvider } from './context/UserAuthContext.jsx'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 const Home = lazy(() => import('./pages/Home'))
@@ -18,7 +18,7 @@ const Checkout = lazy(() => import('./pages/Checkout'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard'))
 import './index.css'
-import { ResortContext } from './context/ResortContext'
+import { ResortContext } from './context/ResortContext.js'
 
 function PublicLayout() {
   const { siteData, siteDataError, retrySiteData } = useContext(ResortContext)

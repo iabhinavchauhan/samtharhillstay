@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js",
     "build": "vite build",
-    "lint": "eslint client/src --ext .js,.jsx || true",
+    "lint": "npm --prefix client run lint",
+    "test": "node --experimental-test-isolation=none --test server/test/api.integration.test.js",
     "preview": "node server.js",
     "start": "node server.js"
   },

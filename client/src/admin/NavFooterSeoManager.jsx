@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Menu,
   Phone,
   Share2,
-  FileText,
-  Search,
   Plus,
   Trash2,
-  ExternalLink,
-  Save,
   Globe
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';

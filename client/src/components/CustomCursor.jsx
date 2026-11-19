@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 
 export default function CustomCursor() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900)
 
   useEffect(() => {
     const checkMobile = () => window.innerWidth <= 900
-    setIsMobile(checkMobile())
-
     const handleResize = () => setIsMobile(checkMobile())
     const handleMove = (event) => setPosition({ x: event.clientX, y: event.clientY })
 

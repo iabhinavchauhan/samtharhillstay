@@ -1,15 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Building2,
   Plus,
   Trash2,
-  Edit,
-  DollarSign,
-  MapPin,
-  Tag,
-  CheckCircle,
-  Image as ImageIcon,
-  ChevronRight
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
 import { CURRENCY_SYMBOL, formatPrice } from '../utils/currency';
@@ -263,7 +256,7 @@ export default function HomestayManager({ content, onChange }) {
             <label className="block text-xs font-semibold text-white/70 mb-2">Featured Main Image</label>
             <div className="flex items-center gap-4">
               <div className="w-40 h-24 rounded-xl overflow-hidden border border-white/15 bg-black/40 shrink-0">
-                <img src={currentStay.mainImage} alt="" className="w-full h-full object-cover" />
+                <img src={currentStay.mainImage} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               </div>
               <button
                 type="button"

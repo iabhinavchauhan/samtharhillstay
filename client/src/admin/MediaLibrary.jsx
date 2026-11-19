@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Upload, Trash2, Search, Check, Copy, AlertCircle, Image as ImageIcon } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.js';
 import { apiFetch } from '../utils/api';
 
 export default function MediaLibrary({ onSelectImage, selectMode = false }) {
@@ -12,24 +12,25 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
   const [copiedId, setCopiedId] = useState(null);
   const [error, setError] = useState('');
 
-  const fetchMedia = async () => {
+  const fetchMedia = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await apiFetch('/api/admin/media', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       setMedia(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setError('Failed to load media.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
-    fetchMedia();
-  }, []);
+    // Network completion updates state asynchronously; this effect owns initial loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchMedia();
+  }, [fetchMedia]);
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -163,6 +164,8 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
                 <img
                   src={item.url}
                   alt={item.alt_text || item.filename}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                 />
                 {selectMode && (

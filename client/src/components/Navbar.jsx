@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext, useRef } from 'react'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
-import { ResortContext } from '../context/ResortContext'
-import { useUserAuth } from '../context/UserAuthContext'
+import { ResortContext } from '../context/ResortContext.js'
+import { useUserAuth } from '../context/UserAuthContext.js'
 import { ShoppingBag, User, LogOut, Calendar, CreditCard, ChevronDown } from 'lucide-react'
 
 export default function Navbar() {

@@ -1,11 +1,10 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
-import { motion } from "framer-motion"
-import { ResortContext } from "../context/ResortContext"
-import { useUserAuth } from "../context/UserAuthContext"
+import { ResortContext } from "../context/ResortContext.js"
+import { useUserAuth } from "../context/UserAuthContext.js"
 import { resolveImage } from "../utils/resolveImage"
 import { formatPrice } from "../utils/currency"
-import { Calendar, Users, ShoppingBag, Check, ArrowRight } from "lucide-react"
+import { ShoppingBag, Check, ArrowRight } from "lucide-react"
 
 export default function HomestayDetails() {
   const { slug } = useParams()
@@ -14,7 +13,7 @@ export default function HomestayDetails() {
   const { toggleWishlist, addRecentView, wishlist, reviews, homestays, foodItems } = useContext(ResortContext)
   const { addToCart, recordRecentView, isAuthenticated, loading: authLoading } = useUserAuth()
 
-  const [selectedRoom, setSelectedRoom] = useState("")
+  const [selectedRoom, setSelectedRoom] = useState(null)
   const [checkIn, setCheckIn] = useState(() => {
     const d = new Date(Date.now() + 86400000)
     return d.toISOString().split("T")[0]
@@ -45,12 +44,6 @@ export default function HomestayDetails() {
       if (recordRecentView) recordRecentView(stay.slug)
     }
   }, [stay, addRecentView, recordRecentView])
-
-  useEffect(() => {
-    if (stay && stay.rooms && stay.rooms.length > 0) {
-      setSelectedRoom(stay.rooms[0].name)
-    }
-  }, [stay])
 
   const currentRoom = useMemo(() => {
     if (!stay || !stay.rooms) return { price: 100, name: "Suite" }

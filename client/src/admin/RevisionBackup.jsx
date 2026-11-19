@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { History, RotateCcw, ShieldAlert, CheckCircle, Clock, User, Download, UploadCloud, AlertCircle } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.js';
 import { apiFetch } from '../utils/api';
 
 export default function RevisionBackup({ onRestoreSuccess }) {
@@ -10,24 +10,25 @@ export default function RevisionBackup({ onRestoreSuccess }) {
   const [actionMsg, setActionMsg] = useState('');
   const [error, setError] = useState('');
 
-  const fetchRevisions = async () => {
+  const fetchRevisions = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await apiFetch('/api/admin/revisions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       setRevisions(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setError('Failed to fetch revisions.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
-    fetchRevisions();
-  }, []);
+    // Network completion updates state asynchronously; this effect owns initial loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchRevisions();
+  }, [fetchRevisions]);
 
   const handleRestore = async (id, note) => {
     const confirmed = window.confirm(
@@ -68,7 +69,7 @@ export default function RevisionBackup({ onRestoreSuccess }) {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       alert('Failed to download backup JSON');
     }
   };

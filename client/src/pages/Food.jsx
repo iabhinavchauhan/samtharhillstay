@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { ResortContext } from '../context/ResortContext'
+import { ResortContext } from '../context/ResortContext.js'
 
 export default function Food() {
   const { homestays, foodItems } = useContext(ResortContext)

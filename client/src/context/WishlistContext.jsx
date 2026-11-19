@@ -1,16 +1,14 @@
-import { createContext, useEffect, useMemo, useState } from 'react'
-
-export const WishlistContext = createContext()
+import { useEffect, useMemo, useState } from 'react'
+import { WishlistContext } from './WishlistContext.js'
 
 export function WishlistProvider({ children }) {
-  const [wishlist, setWishlist] = useState([])
-
-  useEffect(() => {
-    const saved = localStorage.getItem('globe-wishlist')
-    if (saved) {
-      setWishlist(JSON.parse(saved))
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('globe-wishlist') || '[]')
+    } catch {
+      return []
     }
-  }, [])
+  })
 
   useEffect(() => {
     localStorage.setItem('globe-wishlist', JSON.stringify(wishlist))
