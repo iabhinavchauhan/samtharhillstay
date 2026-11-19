@@ -5,7 +5,6 @@ import { formatPrice } from '../utils/currency'
 import { apiFetch } from '../utils/api'
 import { responsiveUnsplashImage, responsiveUnsplashSrcSet } from '../utils/resolveImage'
 import { homestays as defaultHomestays } from '../data/resortData'
-import { MessageCircle } from 'lucide-react'
 
 function compressReviewPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -691,7 +690,7 @@ export default function Home() {
 
             <div className="mt-8 pt-5 border-t border-white/10 text-xs text-white/60">
               <a href={contactData.whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[#caa34b] font-bold hover:underline">
-                <MessageCircle aria-hidden="true" className="h-5 w-5 shrink-0 fill-[#25D366] text-[#25D366]" />
+                <img aria-hidden="true" src="/whatsapp-logo.svg" alt="" className="h-5 w-5 shrink-0" />
                 Contact personal care →
               </a>
             </div>
