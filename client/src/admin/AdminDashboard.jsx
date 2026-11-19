@@ -18,7 +18,6 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  CreditCard
 } from 'lucide-react';
 import { useAuth } from './AuthContext.js';
 import AdminLogin from './AdminLogin';
@@ -32,7 +31,6 @@ import UserManagement from './UserManagement';
 import InquiriesManager from './InquiriesManager';
 import ReviewsManager from './ReviewsManager';
 import LivePreviewModal from './LivePreviewModal';
-import PaymentGatewaySettings from './PaymentGatewaySettings';
 
 export default function AdminDashboard() {
   const { user, token, logout, isAuthenticated, loading: authLoading } = useAuth();
@@ -158,7 +156,6 @@ export default function AdminDashboard() {
     { id: 'nav-footer', label: 'Header, Footer & SEO', icon: Menu },
     { id: 'inquiries', label: 'Guest Inquiries & Leads', icon: Inbox },
     { id: 'reviews', label: 'Guest Reviews & Feedback', icon: MessageSquare },
-    { id: 'payments', label: 'Payments & Gateway', icon: CreditCard },
     { id: 'users', label: 'Admin Accounts', icon: Users },
     { id: 'revisions', label: 'Revisions & Backups', icon: History }
   ];
@@ -459,9 +456,6 @@ export default function AdminDashboard() {
 
                 {/* 9. INQUIRIES & LEADS */}
                 {activeTab === 'inquiries' && <InquiriesManager />}
-
-                {/* 10. PAYMENTS & GATEWAY */}
-                {activeTab === 'payments' && <PaymentGatewaySettings />}
 
                 {/* 11. USER ACCOUNTS */}
                 {activeTab === 'users' && <UserManagement />}
