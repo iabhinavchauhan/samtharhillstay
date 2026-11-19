@@ -499,6 +499,10 @@ export default function Dashboard() {
               </span>
             </div>
 
+            <div className="rounded-2xl border-2 border-[#caa34b] bg-[#fff4cc] px-4 py-3 text-sm font-bold text-[#6b4f0b] shadow-sm sm:text-base">
+              Children under age 6: half rate · Age 6 and above: full rate
+            </div>
+
             {cart.length === 0 ? (
               <div className="rounded-[28px] border border-dashed border-[#d8d0bf] bg-[#fffdf8] p-12 text-center space-y-4">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f1ead7] text-[#94742f]">
