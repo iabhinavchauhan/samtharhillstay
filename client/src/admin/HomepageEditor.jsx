@@ -10,6 +10,10 @@ import {
   Layers
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
+import { occasionThemes } from '../utils/occasionThemes'
+import { resolveImage } from '../utils/resolveImage'
+
+const heroOccasionThemes = occasionThemes.filter((theme) => ['default', 'christmas'].includes(theme.value))
 
 export default function HomepageEditor({ content, onChange }) {
   const [activeSectionKey, setActiveSectionKey] = useState('hero');
@@ -150,6 +154,19 @@ export default function HomepageEditor({ content, onChange }) {
             </label>
           </div>
 
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4">
+            <label className="block text-xs font-semibold text-white/80 mb-2" htmlFor="hero-occasion-theme">Seasonal hero theme</label>
+            <select
+              id="hero-occasion-theme"
+              value={heroOccasionThemes.some((theme) => theme.value === homepage.hero?.theme) ? homepage.hero.theme : 'default'}
+              onChange={(e) => updateHp('hero', 'theme', e.target.value === 'default' ? '' : e.target.value)}
+              className="w-full max-w-sm bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+            >
+              {heroOccasionThemes.map((theme) => <option key={theme.value} value={theme.value}>{theme.label}</option>)}
+            </select>
+            <p className="mt-2 text-[11px] text-white/50">Changes the hero styling only. Default keeps the current homepage appearance.</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-xs font-semibold text-white/70 mb-1">Top Tagline / Subtitle Pill</label>
@@ -214,7 +231,21 @@ export default function HomepageEditor({ content, onChange }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {(homepage.hero?.images || []).map((imgUrl, i) => (
                 <div key={i} className="group relative rounded-xl overflow-hidden border border-white/15 h-28 bg-black/40">
-                  <img src={imgUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <img
+                    key={`${i}-${imgUrl}`}
+                    src={resolveImage(imgUrl, `hero-slide-${i}`)}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    onError={(event) => {
+                      if (event.currentTarget.dataset.fallback === 'true') return
+                      event.currentTarget.dataset.fallback = 'true'
+                      event.currentTarget.src = i % 2 === 0
+                        ? '/images/field-notes/morning-view.jpg'
+                        : '/images/field-notes/village-path.jpg'
+                    }}
+                    className="w-full h-full object-cover"
+                  />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition">
                     <button
                       type="button"
@@ -438,8 +469,20 @@ export default function HomepageEditor({ content, onChange }) {
       {/* 4. DESTINATIONS & DAY TRIPS */}
       {activeSectionKey === 'destinations' && (
         <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <h3 className="text-base font-bold text-white">Day Trips & Excursions (Destinations)</h3>
+          <div className="flex flex-col gap-4 border-b border-white/10 pb-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h3 className="text-base font-bold text-white">Day Trips & Excursions (Destinations)</h3>
+              <label className="mt-3 block text-xs font-semibold text-white/70" htmlFor="explore-occasion-theme">Seasonal explore theme</label>
+              <select
+                id="explore-occasion-theme"
+                value={homepage.destinations?.theme || 'default'}
+                onChange={(e) => updateHp('destinations', 'theme', e.target.value === 'default' ? '' : e.target.value)}
+                className="mt-1 w-full max-w-sm bg-[#0a1711] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+              >
+                {occasionThemes.map((theme) => <option key={theme.value} value={theme.value}>{theme.label}</option>)}
+              </select>
+              <p className="mt-2 text-[11px] text-white/50">Default keeps the current appearance. Choose a theme for the occasion.</p>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -454,7 +497,7 @@ export default function HomepageEditor({ content, onChange }) {
                   }
                 ]);
               }}
-              className="px-3 py-1.5 bg-[#caa34b] text-[#10281e] font-semibold text-xs rounded-lg flex items-center gap-1.5"
+              className="self-start px-3 py-1.5 bg-[#caa34b] text-[#10281e] font-semibold text-xs rounded-lg flex items-center gap-1.5 lg:self-auto"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Excursion
@@ -527,6 +570,42 @@ export default function HomepageEditor({ content, onChange }) {
                   className="w-full bg-[#10281e] border border-white/10 rounded-lg px-2.5 py-1 text-[11px] text-white/60"
                 />
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 6. GALLERIES SECTION */}
+      {activeSectionKey === 'clusters' && (
+        <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-5">
+          <div className="border-b border-white/10 pb-4">
+            <h3 className="text-base font-bold text-white">Regional Highlights Colors</h3>
+            <p className="mt-1 text-xs text-white/60">Customize the section, attraction cards, headings, and place tags. Defaults keep the current website colors.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              ['backgroundColor', 'Section background', '#faf8f1'],
+              ['headingColor', 'Heading text', '#10281e'],
+              ['accentColor', 'Section label & accent', '#9b782d'],
+              ['cardBackgroundColor', 'Card background', '#fffdf8'],
+              ['cardBorderColor', 'Card border', '#e5dfd1'],
+              ['cardHeadingColor', 'Card heading', '#1b3527'],
+              ['numberBackgroundColor', 'Number badge background', '#f5f0e1'],
+              ['numberBorderColor', 'Number badge border', '#e5dbc0'],
+              ['tagBackgroundColor', 'Place tag background', '#f8f6ef'],
+              ['tagBorderColor', 'Place tag border', '#e8e2d5'],
+              ['tagTextColor', 'Place tag text', '#73766d'],
+            ].map(([key, label, defaultColor]) => (
+              <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0a1711] px-3 py-2.5 text-xs text-white/80">
+                <span>{label}</span>
+                <input
+                  type="color"
+                  aria-label={label}
+                  value={homepage.clusters?.[key] || defaultColor}
+                  onChange={(e) => updateHp('clusters', key, e.target.value)}
+                  className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+                />
+              </label>
             ))}
           </div>
         </div>

@@ -92,6 +92,7 @@ test('draft updates publish to the public content endpoint', async () => {
   const contentResponse = await fetch(`${origin}/api/content/published`);
   const data = await contentResponse.json();
   data.seo.siteTitle = 'Integration Test Published Title';
+  data.blogs = [{ title: 'Integration Test Story', slug: 'integration-test-story', date: '2027-02-01', excerpt: 'Test excerpt', image: '/uploads/test.jpg', content: 'Test blog content.' }];
 
   const draftResponse = await fetch(`${origin}/api/admin/content/draft`, {
     method: 'POST',
@@ -108,7 +109,9 @@ test('draft updates publish to the public content endpoint', async () => {
   assert.equal(publishResponse.status, 200);
 
   const publicResponse = await fetch(`${origin}/api/content/published`);
-  assert.equal((await publicResponse.json()).seo.siteTitle, 'Integration Test Published Title');
+  const published = await publicResponse.json();
+  assert.equal(published.seo.siteTitle, 'Integration Test Published Title');
+  assert.deepEqual(published.blogs, data.blogs);
 });
 
 test('public reviews are saved, shown in admin, and deletable', async () => {
@@ -144,7 +147,9 @@ test('public contact inquiries are saved and visible in the admin inbox', async 
       phone: '9800000000',
       dates: '2027-02-01 to 2027-02-03',
       homestay: 'Test Homestay',
-      guests: 2,
+      guests: 4,
+      adults: 2,
+      childAges: [4, 9],
       message: 'Integration test inquiry'
     })
   });
@@ -152,7 +157,12 @@ test('public contact inquiries are saved and visible in the admin inbox', async 
   const inquiry = await submitted.json();
 
   const inbox = await fetch(`${origin}/api/admin/inquiries`, { headers: adminHeaders() });
-  assert.ok((await inbox.json()).some((item) => item.id === inquiry.id));
+  const inquiries = await inbox.json();
+  const savedInquiry = inquiries.find((item) => item.id === inquiry.id);
+  assert.ok(savedInquiry);
+  assert.equal(savedInquiry.guests, 4);
+  assert.equal(savedInquiry.adults, 2);
+  assert.deepEqual(savedInquiry.child_ages, [4, 9]);
 });
 
 test('guest signup, profile refresh, and recent-view data survive API round trips', async () => {

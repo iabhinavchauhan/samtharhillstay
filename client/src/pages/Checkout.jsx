@@ -125,7 +125,7 @@ export default function Checkout() {
           currency: orderData.currency || 'INR',
           name: 'Samthar Hill-Stay',
           description: `Booking Reservation: ${orderData.bookingRef}`,
-          image: '/samthar-mark.svg?v=2',
+          image: '/favicon.png',
           order_id: orderData.razorpayOrderId,
           prefill: {
             name: guestName,

@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useRef } from 'react'
+import { useEffect, useState, useContext, useRef, useMemo } from 'react'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext.js'
 import { useUserAuth } from '../context/UserAuthContext.js'
@@ -11,16 +11,20 @@ export default function Navbar() {
   const contact = siteData?.contact || {}
   const navigate = useNavigate()
 
-  const rawNavLinks = nav.links || [
-    { to: '/#home', label: 'Home' },
-    { to: '/#homestays', label: 'Homestays' },
-    { to: '/#experiences', label: 'Experiences' },
-    { to: '/#explore', label: 'Explore' },
-    { to: '/#gallery', label: 'Gallery' },
-    { to: '/#contact', label: 'Contact' },
-  ]
-
-  const navLinks = rawNavLinks.filter((link) => link.visible !== false)
+  const navLinks = useMemo(() => {
+    const rawNavLinks = nav.links || [
+      { to: '/#home', label: 'Home' },
+      { to: '/#homestays', label: 'Homestays' },
+      { to: '/#experiences', label: 'Experiences' },
+      { to: '/#explore', label: 'Explore' },
+      { to: '/#gallery', label: 'Gallery' },
+      { to: '/#contact', label: 'Contact' },
+    ]
+    const visibleLinks = rawNavLinks.filter((link) => link.visible !== false)
+    return rawNavLinks.some((link) => link.to === '/blogs' && link.visible !== false)
+      ? visibleLinks
+      : [...visibleLinks, { to: '/blogs', label: 'Blogs', visible: true }]
+  }, [nav.links])
 
   const [open, setOpen] = useState(false)
   const [userDropdown, setUserDropdown] = useState(false)
@@ -85,7 +89,7 @@ export default function Navbar() {
     <header className={headerClass}>
       <div className="mx-auto flex min-h-[66px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <a href="/#home" className={`flex shrink-0 items-center gap-2.5 ${isHome ? 'text-white' : 'text-[#10281e]'}`} onClick={() => setOpen(false)}>
-          <img src={nav.logoImage || "/samthar-mark.svg?v=2"} alt="" className="h-10 w-10 shrink-0 object-contain" />
+          <img src="/favicon.png" alt="Samthar Hillstay" className="h-10 w-10 shrink-0 rounded-full object-cover" />
           <span className="leading-tight">
             <span className="display-font block text-base font-bold tracking-wide">{nav.logoText || 'Samthar'}</span>
             <span className={`block text-[8px] font-bold uppercase tracking-[.2em] ${isHome ? 'text-white/70' : 'text-[#777a70]'}`}>

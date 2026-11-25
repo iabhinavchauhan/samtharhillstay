@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from './AuthContext.js';
-import { Lock, User, ArrowRight, ShieldCheck, Mountain, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Lock, User, ArrowRight, ShieldCheck, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminLogin() {
@@ -64,9 +64,7 @@ export default function AdminLogin() {
 
           {/* Top Logo */}
           <div className="relative z-10 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#caa34b]/20 border border-[#caa34b]/40 text-[#caa34b] flex items-center justify-center shadow-lg">
-              <Mountain className="w-6 h-6" />
-            </div>
+            <img src="/favicon.png" alt="Samthar Hillstay" className="relative z-10 h-12 w-12 rounded-full object-cover" />
             <div>
               <span className="display-font block text-xl font-bold tracking-wide text-white">Samthar</span>
               <span className="block text-[9px] font-bold uppercase tracking-[.25em] text-[#caa34b]">Kalimpong · West Bengal</span>
@@ -100,9 +98,7 @@ export default function AdminLogin() {
         {/* Right Side: Clean Login Form */}
         <div className="max-h-none overflow-visible p-8 sm:max-h-[calc(100dvh-4rem)] sm:overflow-y-auto sm:overscroll-contain sm:p-10 flex flex-col justify-center">
           <div className="text-center md:text-left mb-8">
-            <div className="inline-flex md:hidden items-center justify-center w-14 h-14 rounded-2xl bg-[#caa34b]/20 border border-[#caa34b]/40 text-[#caa34b] mb-4">
-              <Mountain className="w-7 h-7" />
-            </div>
+            <img src="/favicon.png" alt="Samthar Hillstay" className="mx-auto mb-4 h-14 w-14 rounded-full object-cover md:hidden" />
             <h1 className="text-2xl font-bold text-white tracking-wide">Administrator Login</h1>
             <p className="text-xs text-emerald-100/70 mt-1">Please enter your authorized credentials to continue</p>
           </div>

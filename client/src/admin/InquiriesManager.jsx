@@ -96,8 +96,8 @@ export default function InquiriesManager() {
                   <span className="text-white font-medium">{inq.homestay || 'Any Stay'}</span>
                 </div>
                 <div>
-                  <span className="text-white/40 block text-[10px]">Guests:</span>
-                  <span className="text-white">{inq.guests} Guest(s)</span>
+                  <span className="text-white/40 block text-[10px]">Guest breakdown:</span>
+                  <span className="text-white">{inq.adults || inq.guests} Adult(s){(inq.child_ages || []).length > 0 && ` · ${(inq.child_ages || []).length} Child(ren), ages ${(inq.child_ages || []).join(', ')}`}</span>
                 </div>
               </div>
 

@@ -996,13 +996,17 @@ app.post('/api/reviews', async (req, res) => {
 // 2. Submit Inquiry / Booking / Contact Form
 app.post('/api/contact', async (req, res) => {
   try {
-    const { name, phone, dates, homestay, guests, message } = req.body;
+    const { name, phone, dates, homestay, guests, adults, childAges, message } = req.body;
+    const ages = Array.isArray(childAges) ? childAges.map((age) => Number(age)).filter((age) => Number.isInteger(age) && age >= 0 && age < 18) : [];
+    const adultCount = Math.max(1, Number.parseInt(adults || guests || 1, 10));
     const submission = await ContactSubmission.create({
       name: name || '',
       phone: phone || '',
       dates: dates || '',
       homestay: homestay || '',
-      guests: guests || 1,
+      guests: Math.max(1, Number(guests) || adultCount + ages.length),
+      adults: adultCount,
+      child_ages: ages,
       message: message || ''
     });
     res.json({ success: true, message: 'Inquiry received successfully.', id: submission._id });

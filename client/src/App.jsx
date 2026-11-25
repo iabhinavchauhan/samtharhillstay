@@ -5,12 +5,15 @@ import { AuthProvider } from './admin/AuthContext.jsx'
 import { UserAuthProvider } from './context/UserAuthContext.jsx'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import WelcomePopup from './components/WelcomePopup'
+import FloatingContactActions from './components/FloatingContactActions'
 const Home = lazy(() => import('./pages/Home'))
 const Homestays = lazy(() => import('./pages/Homestays'))
 const HomestayDetails = lazy(() => import('./pages/HomestayDetails'))
 const Gallery = lazy(() => import('./pages/Gallery'))
 const Reviews = lazy(() => import('./pages/Reviews'))
 const Contact = lazy(() => import('./pages/Contact'))
+const Blogs = lazy(() => import('./pages/Blogs'))
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -26,6 +29,7 @@ function PublicLayout() {
   return (
     <div className="min-h-screen bg-[var(--site-bg,#faf8f1)] text-[var(--site-text,#1b2b22)]">
       <Navbar />
+      <WelcomePopup />
       {siteDataError && (
         <div role="alert" className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 text-xs text-amber-950">
           <span>
@@ -38,6 +42,7 @@ function PublicLayout() {
         <Outlet />
       </main>
       <Footer />
+      <FloatingContactActions />
     </div>
   )
 }
@@ -62,6 +67,8 @@ function App() {
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/reviews" element={<Reviews />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blogs/:slug" element={<Blogs />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/dashboard" element={<Dashboard />} />

@@ -2,7 +2,7 @@ import { useContext } from "react"
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { ResortContext } from "../context/ResortContext.js"
-import { resolveImage } from "../utils/resolveImage"
+import HomestayImage from "../components/HomestayImage"
 import { formatPrice } from "../utils/currency"
 
 const cardReveal = {
@@ -54,11 +54,10 @@ export default function Homestays() {
           >
             <div>
               <div className="h-72 overflow-hidden">
-                <img
-                  src={resolveImage(stay.mainImage || stay.image, stay.slug)}
+                <HomestayImage
+                  src={stay.mainImage || stay.image}
+                  imageKey={stay.slug || stay.name}
                   alt={stay.name}
-                  loading="lazy"
-                  decoding="async"
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>

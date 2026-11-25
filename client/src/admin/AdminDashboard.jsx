@@ -11,6 +11,7 @@ import {
   History,
   Inbox,
   MessageSquare,
+  FileText,
   Eye,
   Save,
   Send,
@@ -31,6 +32,7 @@ import UserManagement from './UserManagement';
 import InquiriesManager from './InquiriesManager';
 import ReviewsManager from './ReviewsManager';
 import LivePreviewModal from './LivePreviewModal';
+import BlogManager from './BlogManager';
 
 export default function AdminDashboard() {
   const { user, token, logout, isAuthenticated, loading: authLoading } = useAuth();
@@ -156,6 +158,7 @@ export default function AdminDashboard() {
     { id: 'nav-footer', label: 'Header, Footer & SEO', icon: Menu },
     { id: 'inquiries', label: 'Guest Inquiries & Leads', icon: Inbox },
     { id: 'reviews', label: 'Guest Reviews & Feedback', icon: MessageSquare },
+    { id: 'blogs', label: 'Blog Posts', icon: FileText },
     { id: 'users', label: 'Admin Accounts', icon: Users },
     { id: 'revisions', label: 'Revisions & Backups', icon: History }
   ];
@@ -416,6 +419,10 @@ export default function AdminDashboard() {
                 {/* 2. HOMEPAGE BUILDER */}
                 {activeTab === 'homepage' && (
                   <HomepageEditor content={content} onChange={handleContentChange} />
+                )}
+
+                {activeTab === 'blogs' && (
+                  <BlogManager content={content} onChange={handleContentChange} />
                 )}
 
                 {/* 3. HOMESTAYS & PRICING */}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext.js';
-import { Eye, EyeOff, UserPlus, Lock, Mail, User, Phone, ArrowRight, ShieldCheck, Sparkles, Mountain } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Lock, Mail, User, Phone, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Signup() {
@@ -80,9 +80,7 @@ export default function Signup() {
 
           {/* Top Logo */}
           <div className="relative z-10 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#caa34b]/20 border border-[#caa34b]/40 text-[#caa34b] flex items-center justify-center shadow-lg">
-              <Mountain className="w-6 h-6" />
-            </div>
+            <img src="/favicon.png" alt="Samthar Hillstay" className="relative z-10 h-12 w-12 rounded-full object-cover" />
             <div>
               <span className="display-font block text-xl font-bold tracking-wide text-white">Samthar</span>
               <span className="block text-[9px] font-bold uppercase tracking-[.25em] text-[#caa34b]">Kalimpong · West Bengal</span>
@@ -116,9 +114,7 @@ export default function Signup() {
         {/* Right Side: Clean Sign Up Form */}
         <div className="p-8 sm:p-10 flex flex-col justify-center">
           <div className="text-center md:text-left mb-8">
-            <div className="inline-flex md:hidden items-center justify-center w-14 h-14 rounded-2xl bg-[#caa34b]/20 border border-[#caa34b]/40 text-[#caa34b] mb-4">
-              <Mountain className="w-7 h-7" />
-            </div>
+            <img src="/favicon.png" alt="Samthar Hillstay" className="mx-auto mb-4 h-14 w-14 rounded-full object-cover md:hidden" />
             <h1 className="text-2xl font-bold text-white tracking-wide">Create Account</h1>
             <p className="text-xs text-emerald-100/70 mt-1">Join Samthar to book serene homestays.</p>
           </div>

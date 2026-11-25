@@ -8,15 +8,17 @@ export const homestays = [
     tagline: 'A luxury hill stay nestled among pine forests with emerald valley views.',
     description:
       'An intimate homestay with handcrafted rooms, refined local cuisine, and slow mornings surrounded by greenery.',
-    mainImage:
-      'https://loremflickr.com/1200/800/mountain%20hotel?random=6b5324d0',
+    detail: 'Ideal for slow weekends, family escapes, and unhurried mornings with tea, clouds, and forest air.',
+    points: ['Quiet mountain village setting', 'Cloud views from the property', 'Camping and bonfire on request', 'Welcoming for couples and families'],
+    priceStarting: 112,
+    priceLabel: 'per night',
+    badge: 'Popular Choice',
+    mainImage: 'https://thepinegetaways.com/images/homestays/mairung.jpg',
     gallery: [
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=d17f3756',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=6d03c7af',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=f15cb4c9',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=b0590e2e',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=68b96f1e',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=af9ea5f7',
+      'https://thepinegetaways.com/images/gallery/views-kanchenjunga.jpg',
+      'https://thepinegetaways.com/images/gallery/rooms-blue-floral.jpg',
+      'https://thepinegetaways.com/images/gallery/food-generous-spread.jpg',
+      'https://thepinegetaways.com/images/gallery/experiences-couple-sunrise.jpg',
     ],
     rooms: [
       {
@@ -49,15 +51,16 @@ export const homestays = [
     tagline: 'A warm homestay on a green plateau with calm mountain views.',
     description:
       'A cozy hideaway for travelers seeking calm, local homestyle dining, and slow afternoons beneath cedar canopies.',
-    mainImage:
-      'https://loremflickr.com/1200/800/forest%20cottage?random=9d018b71',
+    detail: 'Best for travellers who want a quieter hill stay with open views, easy mornings, and room to unwind.',
+    points: ['Valley-facing rooms', 'Open lawn with mountain views', 'Sunrise and sunset outlooks', 'Quiet natural surroundings'],
+    priceStarting: 98,
+    priceLabel: 'per night',
+    badge: 'Valley Vista',
+    mainImage: 'https://thepinegetaways.com/images/homestays/damsang-valley.png',
     gallery: [
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=6d03c7af',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=f15cb4c9',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=af9ea5f7',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=dc6a5e8f',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=c6d1fe6a',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=7686db60',
+      'https://thepinegetaways.com/images/gallery/views-clouds.jpg',
+      'https://thepinegetaways.com/images/gallery/rooms-twin-bed.jpg',
+      'https://thepinegetaways.com/images/gallery/food-evening-tea.jpg',
     ],
     rooms: [
       {
@@ -90,15 +93,16 @@ export const homestays = [
     tagline: 'A premium homestay with sweeping cedar vistas and mountain calm.',
     description:
       'A calm retreat surrounded by lush hills, pine forests, and serene valley views.',
-    mainImage:
-      'https://loremflickr.com/1200/800/mountain%20lodge?random=68d3af33',
+    detail: 'A cozy base for nature lovers, short getaways, and golden-hour walks through the hills and nearby viewpoints.',
+    points: ['A cozy village experience', 'Forest all around', 'Close to Duka Falls', 'A restful weekend base'],
+    priceStarting: 105,
+    priceLabel: 'per night',
+    badge: 'Peaceful Retreat',
+    mainImage: 'https://thepinegetaways.com/images/homestays/pradhan-gaon.jpg',
     gallery: [
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=82734de5',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=cee6ae3f',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=49e578d5',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=68b96f1e',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=b0590e2e',
-      'https://loremflickr.com/1200/800/mountain%20cottage?random=7686db60',
+      'https://thepinegetaways.com/images/gallery/views-changey-falls.jpg',
+      'https://thepinegetaways.com/images/gallery/rooms-wood-paneled.jpg',
+      'https://thepinegetaways.com/images/gallery/experiences-bonfire.jpg',
     ],
     rooms: [
       {

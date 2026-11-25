@@ -2,7 +2,8 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { ResortContext } from "../context/ResortContext.js"
 import { useUserAuth } from "../context/UserAuthContext.js"
-import { resolveImage } from "../utils/resolveImage"
+import HomestayImage from "../components/HomestayImage"
+import { homestays as defaultHomestays } from "../data/resortData"
 import { formatPrice } from "../utils/currency"
 import { ShoppingBag, Check, ArrowRight } from "lucide-react"
 
@@ -29,7 +30,21 @@ export default function HomestayDetails() {
   const [addingToCart, setAddingToCart] = useState(false)
   const pendingCartHandled = useRef(false)
 
-  const stay = useMemo(() => (homestays || []).find((item) => item.slug === slug), [homestays, slug])
+  const stay = useMemo(() => {
+    const liveStay = (homestays || []).find((item) => item.slug === slug)
+    const defaultStay = defaultHomestays.find((item) => item.slug === slug)
+    if (!liveStay && !defaultStay) return undefined
+    return {
+      ...defaultStay,
+      ...liveStay,
+      rooms: liveStay?.rooms?.length ? liveStay.rooms : defaultStay?.rooms || [],
+      gallery: liveStay?.gallery?.length ? liveStay.gallery : defaultStay?.gallery || [],
+      amenities: liveStay?.amenities?.length ? liveStay.amenities : defaultStay?.amenities || [],
+      attractions: liveStay?.attractions?.length ? liveStay.attractions : defaultStay?.attractions || [],
+      foodHighlights: liveStay?.foodHighlights?.length ? liveStay.foodHighlights : defaultStay?.foodHighlights || [],
+      contact: { ...defaultStay?.contact, ...liveStay?.contact },
+    }
+  }, [homestays, slug])
   const stayMenu = useMemo(
     () => (stay ? (foodItems || []).filter((item) => (item.servedAt || []).some(s => s.toLowerCase().includes(stay.name.toLowerCase()))) : []),
     [stay, foodItems],
@@ -151,11 +166,10 @@ export default function HomestayDetails() {
           <div className="grid gap-4 sm:grid-cols-2">
             {stay.gallery.map((image, idx) => (
               <div key={image} className="h-64 overflow-hidden rounded-[28px]">
-                <img
-                  src={resolveImage(image, `${stay.slug}-${idx}`)}
+                <HomestayImage
+                  src={image}
+                  imageKey={`${stay.slug}-${idx}`}
                   alt={`${stay.name} room and property ${idx + 1}`}
-                  loading="lazy"
-                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               </div>

@@ -26,12 +26,7 @@ export default function Footer() {
         <div className="grid gap-10 border-b border-white/10 pb-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_.8fr_.8fr_1.1fr] lg:gap-12">
           <div>
             <a href="/#home" className="inline-flex items-center gap-3" aria-label="Samthar home">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl border border-[var(--accent-gold,#d2b45f)]/30 bg-white/[.06] text-[var(--accent-gold,#e2c96f)]">
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3 19 7-12 4 7 2-3 5 8H3Z" />
-                  <path d="m8 19 5-8m-2 8 3-5" />
-                </svg>
-              </span>
+              <img src="/favicon.png" alt="Samthar Hillstay" className="h-12 w-12 rounded-full object-cover" />
               <span>
                 <span className="display-font block text-2xl font-semibold tracking-wide text-white">
                   {nav.logoText || 'Samthar'}
@@ -88,12 +83,12 @@ export default function Footer() {
                 </span>
                 <span>{nav.logoText || 'Samthar'}<br /><span className="text-xs text-[#aeb9ae]">{contact.address || contact.location || 'Kalimpong, West Bengal'}</span></span>
               </p>
-              <p className="flex items-center gap-3">
+              <a href={`mailto:${contact.email || 'stay@samtharhillstay.com'}`} className="footer-link flex items-center gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[.07] text-[var(--accent-gold,#e2c96f)]">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
                 </span>
                 <span>Email<br /><span className="text-xs text-[#aeb9ae]">{contact.email || 'stay@samtharhillstay.com'}</span></span>
-              </p>
+              </a>
             </div>
           </div>
         </div>

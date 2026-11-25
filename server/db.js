@@ -59,6 +59,8 @@ const contactSubmissionSchema = new mongoose.Schema({
   dates: { type: String, default: '' },
   homestay: { type: String, default: '' },
   guests: { type: Number, default: 1 },
+  adults: { type: Number, default: 1 },
+  child_ages: { type: [Number], default: [] },
   message: { type: String, default: '' },
   created_at: { type: Date, default: Date.now }
 });

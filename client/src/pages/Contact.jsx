@@ -58,7 +58,7 @@ export default function Contact() {
                   <p className="text-xs uppercase tracking-[0.35em] text-sand/70">{stay.name}</p>
                   <p className="mt-2">{stay.contact.address}</p>
                   <p>Phone: {stay.contact.phone}</p>
-                  <p>Email: {stay.contact.email}</p>
+                  <p>Email: <a href={`mailto:${stay.contact.email}`} className="underline decoration-white/30 underline-offset-2 hover:text-white">{stay.contact.email}</a></p>
                   <p>WhatsApp: {stay.contact.whatsapp}</p>
                 </div>
               ))}

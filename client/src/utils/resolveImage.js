@@ -1,5 +1,12 @@
+const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
+
 export function resolveImage(src, key, width = 1200, height = 800) {
   if (!src || typeof src !== 'string') return src
+
+  // Uploads are served by the API host, which can differ from the website host.
+  if (src.startsWith('/uploads/') && configuredApiBaseUrl) {
+    return `${configuredApiBaseUrl}${src}`
+  }
 
   // If image already looks local or from picsum, return as-is
   if (!src.includes('loremflickr.com')) return src
