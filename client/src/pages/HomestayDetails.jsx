@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { ResortContext } from "../context/ResortContext.js"
 import { useUserAuth } from "../context/UserAuthContext.js"
 import HomestayImage from "../components/HomestayImage"
+import { resolveImage } from "../utils/resolveImage"
+import { getVideoEmbedUrl, normalizeGalleryMedia } from "../utils/galleryMedia"
 import { homestays as defaultHomestays } from "../data/resortData"
 import { formatPrice } from "../utils/currency"
 import { ShoppingBag, Check, ArrowRight } from "lucide-react"
@@ -164,16 +166,34 @@ export default function HomestayDetails() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {stay.gallery.map((image, idx) => (
-              <div key={image} className="h-64 overflow-hidden rounded-[28px]">
-                <HomestayImage
-                  src={image}
-                  imageKey={`${stay.slug}-${idx}`}
-                  alt={`${stay.name} room and property ${idx + 1}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ))}
+            {stay.gallery.map((item, idx) => {
+              const media = normalizeGalleryMedia(item)
+              const embedUrl = media.type === 'video' ? getVideoEmbedUrl(media.url) : ''
+              const mediaUrl = resolveImage(media.url, `${stay.slug}-${idx}`)
+              return (
+                <div key={`${media.type}-${media.url || idx}`} className="h-64 overflow-hidden rounded-[28px] bg-[#10281e]">
+                  {media.type === 'video' ? embedUrl ? (
+                    <iframe
+                      src={embedUrl}
+                      title={`${stay.name} video ${idx + 1}`}
+                      className="h-full w-full border-0"
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video src={mediaUrl} poster={media.poster ? resolveImage(media.poster, `${stay.slug}-${idx}-poster`) : undefined} controls playsInline preload="metadata" className="h-full w-full object-cover" />
+                  ) : (
+                    <HomestayImage
+                      src={media.url}
+                      imageKey={`${stay.slug}-${idx}`}
+                      alt={`${stay.name} room and property ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <div className="rounded-[32px] border border-[#e5dbc0] bg-[#faf7ef] p-8">

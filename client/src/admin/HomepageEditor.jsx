@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import {
   Home,
   Plus,
@@ -12,15 +12,19 @@ import {
 import ImagePickerModal from './ImagePickerModal';
 import { occasionThemes } from '../utils/occasionThemes'
 import { resolveImage } from '../utils/resolveImage'
+import { ResortContext } from '../context/ResortContext.js'
+import { homestays as defaultHomestays } from '../data/resortData'
 
 const heroOccasionThemes = occasionThemes.filter((theme) => ['default', 'christmas'].includes(theme.value))
 
-export default function HomepageEditor({ content, onChange }) {
+export default function HomepageEditor({ content, onChange, onNavigate }) {
+  const { reviews = [] } = useContext(ResortContext)
   const [activeSectionKey, setActiveSectionKey] = useState('hero');
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageTargetCallback, setImageTargetCallback] = useState(null);
 
   const homepage = content.homepage || {};
+  const homepageStays = content.homestays?.length >= 3 ? content.homestays : defaultHomestays;
 
   const openImagePicker = (callback) => {
     setImageTargetCallback(() => callback);
@@ -45,7 +49,7 @@ export default function HomepageEditor({ content, onChange }) {
   };
 
   // Section Ordering & Visibility
-  const sectionsOrder = (homepage.sectionsOrder || [
+  const configuredOrder = (homepage.sectionsOrder || [
     'hero',
     'stays',
     'reasons',
@@ -53,8 +57,9 @@ export default function HomepageEditor({ content, onChange }) {
     'destinations',
     'clusters',
     'gallery',
-    'contact'
-  ]).filter((section) => section !== 'faq');
+    'reviews'
+  ]).filter((section) => section !== 'faq' && section !== 'contact');
+  const sectionsOrder = [...configuredOrder, ...['stays', 'reviews'].filter((section) => !configuredOrder.includes(section))];
 
   const moveSection = (idx, dir) => {
     const targetIdx = idx + dir;
@@ -694,6 +699,24 @@ export default function HomepageEditor({ content, onChange }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {activeSectionKey === 'stays' && (
+        <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-5">
+          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div><h3 className="text-base font-bold text-white">Homepage Stays Section</h3><p className="mt-1 text-xs text-white/60">These are the stays currently displayed on the homepage. Edit their details in Homestays & Pricing.</p></div>
+            <label className="flex items-center gap-2 text-xs text-white/80"><input type="checkbox" checked={homepage.staysSection?.visible !== false} onChange={(e) => updateHp('staysSection', 'visible', e.target.checked)} className="accent-[#caa34b]" />Visible</label>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4"><p className="mb-3 text-xs font-bold text-white/80">Currently shown stays ({homepageStays.length})</p><div className="grid gap-2 sm:grid-cols-2">{homepageStays.map((stay) => <div key={stay.slug || stay.name} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/75">{stay.name} <span className="text-white/40">· {stay.location || 'Homestay'}</span></div>)}</div><button type="button" onClick={() => onNavigate?.('homestays')} className="mt-4 rounded-lg bg-[#caa34b] px-3 py-2 text-xs font-semibold text-[#10281e]">Manage stays, photos & pricing</button></div>
+        </div>
+      )}
+
+      {activeSectionKey === 'reviews' && (
+        <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-5">
+          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4"><div><h3 className="text-base font-bold text-white">Homepage Guest Reviews</h3><p className="mt-1 text-xs text-white/60">This is the same live review list rendered on the homepage.</p></div><label className="flex items-center gap-2 text-xs text-white/80"><input type="checkbox" checked={homepage.reviewsSection?.visible !== false} onChange={(e) => updateHp('reviewsSection', 'visible', e.target.checked)} className="accent-[#caa34b]" />Visible</label></div>
+          <div className="space-y-2">{reviews.length ? reviews.slice(0, 8).map((review) => <div key={review.id} className="rounded-xl border border-white/10 bg-[#0a1711] p-3"><div className="flex justify-between gap-3 text-xs"><strong className="text-white">{review.author}</strong><span className="text-[#caa34b]">{'★'.repeat(review.rating || 5)}</span></div><p className="mt-1 line-clamp-2 text-xs text-white/65">{review.text}</p></div>) : <p className="rounded-xl border border-white/10 bg-[#0a1711] p-4 text-xs text-white/55">No reviews are currently published on the homepage.</p>}</div>
+          <button type="button" onClick={() => onNavigate?.('reviews')} className="rounded-lg bg-[#caa34b] px-3 py-2 text-xs font-semibold text-[#10281e]">Manage homepage reviews</button>
         </div>
       )}
 

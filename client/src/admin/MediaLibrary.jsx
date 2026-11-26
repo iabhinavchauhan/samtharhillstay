@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Upload, Trash2, Search, Check, Copy, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from './AuthContext.js';
 import { apiFetch } from '../utils/api';
+import { resolveImage } from '../utils/resolveImage';
 
 export default function MediaLibrary({ onSelectImage, selectMode = false }) {
   const { token } = useAuth();
@@ -89,7 +90,7 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
   const filteredMedia = media.filter((m) =>
     (m.filename || '').toLowerCase().includes(search.toLowerCase()) ||
     (m.alt_text || '').toLowerCase().includes(search.toLowerCase())
-  );
+  ).filter((m) => !selectMode || !m.mimetype || m.mimetype.startsWith('image/'));
 
   return (
     <div className="space-y-6">
@@ -161,13 +162,17 @@ export default function MediaLibrary({ onSelectImage, selectMode = false }) {
               }`}
             >
               <div className="h-36 w-full bg-black/40 overflow-hidden relative">
-                <img
-                  src={item.url}
-                  alt={item.alt_text || item.filename}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                />
+                {item.mimetype?.startsWith('video/') ? (
+                  <video src={resolveImage(item.url, item.filename)} aria-label={item.alt_text || item.filename} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                ) : (
+                  <img
+                    src={resolveImage(item.url, item.filename)}
+                    alt={item.alt_text || item.filename}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                )}
                 {selectMode && (
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                     <span className="px-3 py-1 bg-[#caa34b] text-[#10281e] text-xs font-bold rounded-lg shadow">

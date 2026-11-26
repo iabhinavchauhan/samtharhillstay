@@ -67,6 +67,30 @@ export default function Home() {
 
   // Dynamic Content Fallbacks
   const hp = siteData?.homepage || {}
+  const staysSection = {
+    visible: true,
+    kicker: 'Our homestays',
+    heading: 'Handcrafted hill getaways',
+    description: 'Each stay brings its own rhythm of the hills — from quiet valley panoramas and pine-forest stillness to thoughtful local hosting, slow breakfasts, and restful mountain suites.',
+    ...(hp.staysSection || {}),
+  }
+  const reviewsSection = {
+    visible: true,
+    kicker: 'Guest Stories & Reviews',
+    heading: 'Himalayan Memories from Our Guests',
+    ...(hp.reviewsSection || {}),
+  }
+  const contactSection = {
+    visible: true,
+    kicker: 'Start planning',
+    heading: 'Book Your Hill Stay',
+    description: 'Reserve directly with our local family hosts. We handle pickups, custom mountain meals, and scenic itineraries.',
+    assistantKicker: 'Personal Care',
+    assistantHeading: 'We are here to assist.',
+    assistantDescription: 'Our local hosts are on hand to advise on road conditions, weather, and scenic treks.',
+    whatsappText: 'Contact personal care',
+    ...(hp.contactSection || {}),
+  }
   const defaultHero = {
     visible: true,
     tagline: 'Three homestays · One slower way to travel',
@@ -350,15 +374,15 @@ export default function Home() {
       )}
 
       {/* 2. HOMESTAYS SECTION */}
-      <section id="homestays" className="home-section home-shell pb-8 pt-10 sm:pb-12 sm:pt-16">
+      {staysSection.visible !== false && <section id="homestays" className="home-section home-shell pb-8 pt-10 sm:pb-12 sm:pt-16">
         <div className="rounded-[32px] border-2 border-[#e5dbc0] p-4 sm:p-6 lg:p-8">
           <div className="mb-9 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
             <div className="rounded-[28px] border border-[#e5dbc0] bg-[#f4efdf] p-5 shadow-sm sm:p-6">
-              <p className="section-kicker">Our homestays</p>
-              <h2 className="section-title mt-3">Handcrafted hill getaways</h2>
+              <p className="section-kicker">{staysSection.kicker}</p>
+              <h2 className="section-title mt-3">{staysSection.heading}</h2>
             </div>
             <p className="max-w-xl rounded-[28px] border border-[#e5dbc0] bg-[#f4efdf] p-5 text-sm leading-6 text-[#5d645f] shadow-sm sm:p-6">
-              Each stay brings its own rhythm of the hills — from quiet valley panoramas and pine-forest stillness to thoughtful local hosting, slow breakfasts, and restful mountain suites.
+              {staysSection.description}
             </p>
           </div>
 
@@ -421,7 +445,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* 3. REASONS TO STAY */}
       {reasonsData.visible !== false && (
@@ -628,11 +652,11 @@ export default function Home() {
       )}
       
       {/* 9. REVIEWS & TESTIMONIALS */}
-      <section className="bg-[#10281e] text-white py-12 sm:py-16">
+      {reviewsSection.visible !== false && <section className="bg-[#10281e] text-white py-12 sm:py-16">
         <div className="home-shell">
           <div className="mb-6 max-w-2xl">
-            <p className="section-kicker !text-[#d0b45e]">Guest Stories & Reviews</p>
-            <h2 className="display-font mt-2 text-3xl font-semibold sm:text-4xl">Himalayan Memories from Our Guests</h2>
+            <p className="section-kicker !text-[#d0b45e]">{reviewsSection.kicker}</p>
+            <h2 className="display-font mt-2 text-3xl font-semibold sm:text-4xl">{reviewsSection.heading}</h2>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
             {/* Review Form */}
@@ -706,15 +730,15 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* 10. CONTACT & BOOKING FORM */}
-      <section id="contact" className="home-section home-shell py-16 sm:py-20">
+      {contactSection.visible !== false && <section id="contact" className="home-section home-shell py-16 sm:py-20">
         <div className="mb-8 max-w-xl">
-          <p className="section-kicker">Start planning</p>
-          <h2 className="section-title mt-3">Book Your Hill Stay</h2>
+          <p className="section-kicker">{contactSection.kicker}</p>
+          <h2 className="section-title mt-3">{contactSection.heading}</h2>
           <p className="mt-3 text-sm leading-6 text-[#6c7169]">
-            Reserve directly with our local family hosts. We handle pickups, custom mountain meals, and scenic itineraries.
+            {contactSection.description}
           </p>
         </div>
 
@@ -780,27 +804,27 @@ export default function Home() {
 
           <aside className="rounded-[28px] bg-[#10281e] p-6 text-white shadow-lg sm:p-8 flex flex-col justify-between">
             <div>
-              <p className="section-kicker !text-[#d0b45e]">Personal Care</p>
-              <h3 className="display-font mt-3 text-2xl font-semibold">We are here to assist.</h3>
+              <p className="section-kicker !text-[#d0b45e]">{contactSection.assistantKicker}</p>
+              <h3 className="display-font mt-3 text-2xl font-semibold">{contactSection.assistantHeading}</h3>
               <p className="mt-2 text-xs leading-5 text-white/65">
-                Our local hosts are on hand to advise on road conditions, weather, and scenic treks.
+                {contactSection.assistantDescription}
               </p>
               <a href={contactData.whatsappLink} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#caa34b] hover:underline">
                 <img aria-hidden="true" src="/whatsapp-logo.svg" alt="" className="h-5 w-5 shrink-0" />
-                Contact personal care →
+                {contactSection.whatsappText} →
               </a>
               <div className="mt-6 space-y-3 text-sm">
                 <a href={`tel:${contactData.phoneLink || contactData.phone}`} className="block text-white/85 hover:text-[#e2c96f]">
                   📞 &nbsp;{contactData.phone}
                 </a>
                 <a href={`mailto:${contactData.email}`} className="block text-white/65 text-xs transition hover:text-[#e2c96f]">✉ &nbsp;{contactData.email}</a>
-                <a href="https://www.google.com/maps/search/?api=1&query=Lake%20Gaon%2C%20Samthar%2C%20Kalimpong%2C%20West%20Bengal" target="_blank" rel="noreferrer" className="block text-white/65 text-xs transition hover:text-[#e2c96f]">📍 &nbsp;Lake Gaon, Samthar, Kalimpong, West Bengal</a>
+                <a href="https://www.google.com/maps/search/?api=1&query=26.976279%2C88.511407" target="_blank" rel="noreferrer" className="block text-white/65 text-xs transition hover:text-[#e2c96f]">📍 &nbsp;Lake Gaon, Samthar, Kalimpong, West Bengal</a>
                 <div className="overflow-hidden rounded-2xl border border-white/15">
                   <iframe
                     title="Map to Lake Gaon, Samthar, Kalimpong, West Bengal"
-                    src="https://www.google.com/maps?q=Lake%20Gaon%2C%20Samthar%2C%20Kalimpong%2C%20West%20Bengal&output=embed"
-                  className="w-full border-0 transition-[height] duration-300"
-                  style={{ height: `${192 + enquiryChildAges.length * 56}px` }}
+                    src="https://www.google.com/maps?q=26.976279%2C88.511407&output=embed"
+                    className="w-full border-0 transition-[height] duration-300"
+                    style={{ height: `${192 + enquiryChildAges.length * 56}px` }}
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     allowFullScreen
@@ -811,7 +835,7 @@ export default function Home() {
 
           </aside>
         </div>
-      </section>
+      </section>}
 
       {/* Lightbox photo modal */}
       {activeStayImage && (

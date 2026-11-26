@@ -162,6 +162,7 @@ export default function AdminDashboard() {
     { id: 'users', label: 'Admin Accounts', icon: Users },
     { id: 'revisions', label: 'Revisions & Backups', icon: History }
   ];
+  const visibleNavMenuItems = navMenuItems.filter((item) => user?.role === 'admin' || item.id !== 'users');
 
   return (
     <div className="h-[100dvh] overflow-hidden bg-[#07130e] text-white flex flex-col font-sans">
@@ -238,7 +239,7 @@ export default function AdminDashboard() {
             <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">
               Management Portal
             </p>
-            {navMenuItems.map((item) => {
+            {visibleNavMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
@@ -273,7 +274,7 @@ export default function AdminDashboard() {
 
         {/* Mobile Horizontal Navigation */}
         <div className="flex w-full shrink-0 gap-1 overflow-x-auto border-b border-white/10 bg-[#0a1711] p-2 md:hidden">
-          {navMenuItems.map((item) => {
+          {visibleNavMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -418,7 +419,7 @@ export default function AdminDashboard() {
 
                 {/* 2. HOMEPAGE BUILDER */}
                 {activeTab === 'homepage' && (
-                  <HomepageEditor content={content} onChange={handleContentChange} />
+                  <HomepageEditor content={content} onChange={handleContentChange} onNavigate={setActiveTab} />
                 )}
 
                 {activeTab === 'blogs' && (

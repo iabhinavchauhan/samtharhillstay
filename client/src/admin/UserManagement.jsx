@@ -141,12 +141,12 @@ export default function UserManagement() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
+          {currentUser?.username?.toLowerCase() !== 'admin' && <button
             onClick={() => { setPasswordError(''); setShowPasswordModal(true); }}
             className="px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl flex items-center gap-2 transition"
           >
             <KeyRound className="w-4 h-4" /> Change My Password
-          </button>
+          </button>}
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2.5 bg-[#caa34b] hover:bg-[#d8b85e] text-[#10281e] font-semibold text-xs rounded-xl flex items-center gap-2 transition shadow-md"
@@ -212,7 +212,9 @@ export default function UserManagement() {
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {u.id !== currentUser?.id && (
+                    {u.username?.toLowerCase() === 'admin' && u.role === 'admin' ? (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#caa34b]">Protected account</span>
+                    ) : u.id !== currentUser?.id && (
                       <button
                         onClick={() => handleDeleteUser(u.id, u.username)}
                         className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"

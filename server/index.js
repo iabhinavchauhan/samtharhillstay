@@ -146,6 +146,18 @@ const upload = multer({
   }
 });
 
+const homestayGalleryUpload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Upload an image or video.'));
+    }
+  }
+});
+
 // Admin Authentication Middleware
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -171,6 +183,13 @@ export function authenticateToken(req, res, next) {
       res.status(503).json({ error: 'Admin authentication is temporarily unavailable.' });
     }
   });
+}
+
+export function requireAdminRole(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Administrator access required.' });
+  }
+  next();
 }
 
 // User Customer Authentication Middleware
@@ -667,10 +686,7 @@ app.get('/api/payments/config', (req, res) => {
 });
 
 // 1b. Admin: verify the configured Razorpay credentials against the gateway
-app.get('/api/admin/payments/verify-credentials', authenticateToken, async (req, res) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ success: false, ok: false, error: 'Admin access required.' });
-  }
+app.get('/api/admin/payments/verify-credentials', authenticateToken, requireAdminRole, async (req, res) => {
   try {
     const result = await checkRazorpayCredentials(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     res.json({ success: true, ...result });
@@ -1083,6 +1099,9 @@ app.post('/api/admin/account/password', authenticateToken, async (req, res) => {
 
     const admin = await Admin.findById(req.user.id);
     if (!admin) return res.status(404).json({ error: 'Administrator account not found.' });
+    if (String(admin.username || '').toLowerCase() === 'admin' && admin.role === 'admin') {
+      return res.status(403).json({ error: 'The Super Administrator account is protected and cannot be edited.' });
+    }
     if (!await bcrypt.compare(currentPassword, admin.password)) {
       return res.status(400).json({ error: 'Current password is incorrect.' });
     }
@@ -1351,6 +1370,37 @@ app.post('/api/admin/media/upload', authenticateToken, upload.single('file'), as
   }
 });
 
+app.post('/api/admin/homestay-gallery/upload', authenticateToken, homestayGalleryUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No media file uploaded.' });
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const altText = req.body.altText || req.file.originalname;
+    const mediaDoc = await Media.create({
+      filename: req.file.filename,
+      url: fileUrl,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      alt_text: altText
+    });
+
+    res.json({
+      success: true,
+      media: {
+        id: mediaDoc._id,
+        filename: req.file.filename,
+        url: fileUrl,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        alt_text: altText
+      }
+    });
+  } catch (err) {
+    console.error('[Error] Homestay gallery media upload:', err);
+    res.status(500).json({ error: err.message || 'Gallery media upload failed.' });
+  }
+});
+
 app.delete('/api/admin/media/:id', authenticateToken, async (req, res) => {
   try {
     const item = await Media.findById(req.params.id);
@@ -1378,7 +1428,7 @@ app.delete('/api/admin/media/:id', authenticateToken, async (req, res) => {
 // USER / ADMIN MANAGEMENT
 // -------------------------------------------------------------
 
-app.get('/api/admin/users', authenticateToken, async (req, res) => {
+app.get('/api/admin/users', authenticateToken, requireAdminRole, async (req, res) => {
   try {
     const users = await Admin.find().select('-password').sort({ created_at: 1 }).lean();
     const formatted = users.map(u => ({ ...u, id: u._id }));
@@ -1388,11 +1438,14 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/users', authenticateToken, async (req, res) => {
+app.post('/api/admin/users', authenticateToken, requireAdminRole, async (req, res) => {
   try {
     const { username, password, role, name } = req.body;
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
+    }
+    if (role && !['admin', 'editor'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be admin or editor.' });
     }
     if (String(password).length < 12 || String(password).length > 128) {
       return res.status(400).json({ error: 'Administrator passwords must be between 12 and 128 characters.' });
@@ -1417,10 +1470,15 @@ app.post('/api/admin/users', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/users/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/users/:id', authenticateToken, requireAdminRole, async (req, res) => {
   try {
     if (req.params.id === req.user.id?.toString()) {
       return res.status(400).json({ error: 'You cannot delete your own logged-in account.' });
+    }
+    const targetAdmin = await Admin.findById(req.params.id);
+    if (!targetAdmin) return res.status(404).json({ error: 'Administrator account not found.' });
+    if (String(targetAdmin.username || '').toLowerCase() === 'admin' && targetAdmin.role === 'admin') {
+      return res.status(403).json({ error: 'The Super Administrator account is protected and cannot be deleted.' });
     }
     await Admin.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'User deleted.' });

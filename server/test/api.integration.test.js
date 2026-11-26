@@ -217,29 +217,93 @@ test('admin can create and remove an additional admin account', async () => {
   assert.equal(deleted.status, 200);
 });
 
-test('password changes revoke prior admin tokens and issue a replacement', async () => {
-  const changed = await fetch(`${origin}/api/admin/account/password`, {
+test('super administrator account cannot be deleted or edited', async () => {
+  const superAdmin = (await (await fetch(`${origin}/api/admin/users`, { headers: adminHeaders() })).json())
+    .find((item) => item.username === 'admin');
+  assert.ok(superAdmin);
+
+  const created = await fetch(`${origin}/api/admin/users`, {
     method: 'POST',
     headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'protection-checker', password: 'Test-Only-Checker-Password-2026!', role: 'editor' })
+  });
+  assert.equal(created.status, 200);
+  const checker = await created.json();
+  const checkerLogin = await fetch(`${origin}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'protection-checker', password: 'Test-Only-Checker-Password-2026!' })
+  });
+  const checkerToken = (await checkerLogin.json()).token;
+
+  const deniedList = await fetch(`${origin}/api/admin/users`, { headers: { Authorization: `Bearer ${checkerToken}` } });
+  assert.equal(deniedList.status, 403);
+  const deniedEscalation = await fetch(`${origin}/api/admin/users`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${checkerToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'editor-made-admin', password: 'Test-Only-Escalated-Password-2026!', role: 'admin' })
+  });
+  assert.equal(deniedEscalation.status, 403);
+  const deniedCredentialsCheck = await fetch(`${origin}/api/admin/payments/verify-credentials`, { headers: { Authorization: `Bearer ${checkerToken}` } });
+  assert.equal(deniedCredentialsCheck.status, 403);
+
+  const deletion = await fetch(`${origin}/api/admin/users/${encodeURIComponent(superAdmin.id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${checkerToken}` }
+  });
+  assert.equal(deletion.status, 403);
+
+  const edit = await fetch(`${origin}/api/admin/account/password`, {
+    method: 'POST',
+    headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword: process.env.ADMIN_PASSWORD, newPassword: 'Test-Only-Blocked-Password-2026!' })
+  });
+  assert.equal(edit.status, 403);
+  assert.ok((await (await fetch(`${origin}/api/admin/users`, { headers: adminHeaders() })).json()).some((item) => item.id === superAdmin.id));
+
+  const cleanup = await fetch(`${origin}/api/admin/users/${encodeURIComponent(checker.id)}`, {
+    method: 'DELETE',
+    headers: adminHeaders()
+  });
+  assert.equal(cleanup.status, 200);
+});
+
+test('admin password changes revoke prior sessions and issue a replacement', async () => {
+  const created = await fetch(`${origin}/api/admin/users`, {
+    method: 'POST',
+    headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'password-editor', password: 'Test-Only-Editor-Password-2026!', role: 'editor' })
+  });
+  assert.equal(created.status, 200);
+
+  const login = await fetch(`${origin}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'password-editor', password: 'Test-Only-Editor-Password-2026!' })
+  });
+  assert.equal(login.status, 200);
+  const editorToken = (await login.json()).token;
+  const changed = await fetch(`${origin}/api/admin/account/password`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${editorToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      currentPassword: process.env.ADMIN_PASSWORD,
+      currentPassword: 'Test-Only-Editor-Password-2026!',
       newPassword: 'Test-Only-New-Admin-Password-2026!'
     })
   });
   assert.equal(changed.status, 200);
   const { token: replacementToken } = await changed.json();
 
-  const oldSession = await fetch(`${origin}/api/admin/users`, { headers: adminHeaders() });
+  const oldSession = await fetch(`${origin}/api/admin/users`, { headers: { Authorization: `Bearer ${editorToken}` } });
   assert.equal(oldSession.status, 401);
 
-  adminToken = replacementToken;
-  const newSession = await fetch(`${origin}/api/admin/users`, { headers: adminHeaders() });
+  const newSession = await fetch(`${origin}/api/admin/users`, { headers: { Authorization: `Bearer ${replacementToken}` } });
   assert.equal(newSession.status, 200);
 
   const newLogin = await fetch(`${origin}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'admin', password: 'Test-Only-New-Admin-Password-2026!' })
+    body: JSON.stringify({ username: 'password-editor', password: 'Test-Only-New-Admin-Password-2026!' })
   });
   assert.equal(newLogin.status, 200);
 });
