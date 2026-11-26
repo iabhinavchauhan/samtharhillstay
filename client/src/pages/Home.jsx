@@ -1,13 +1,14 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ResortContext } from '../context/ResortContext.js'
-import { formatPrice } from '../utils/currency'
+import { formatPrice, applyDiscount } from '../utils/currency'
 import { apiFetch } from '../utils/api'
 import { resolveImage, responsiveUnsplashImage, responsiveUnsplashSrcSet } from '../utils/resolveImage'
 import { homestays as defaultHomestays } from '../data/resortData'
 import HomestayImage from '../components/HomestayImage'
+import GalleryLightbox from '../components/GalleryLightbox'
 import { occasionThemeClass } from '../utils/occasionThemes'
-import { Car, MapPin } from 'lucide-react'
+import { Car, MapPin, Mountain, UtensilsCrossed, Wifi, HeartHandshake, Sunrise, Trees } from 'lucide-react'
 
 function compressReviewPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -56,7 +57,7 @@ function compressReviewPhoto(file) {
 }
 
 export default function Home() {
-  const { siteData, reviews, addReview } = useContext(ResortContext)
+  const { siteData, reviews, addReview, homestays, discount } = useContext(ResortContext)
   const location = useLocation()
 
   useEffect(() => {
@@ -182,7 +183,7 @@ export default function Home() {
     address: 'Mairung, Kalimpong Hills, West Bengal 734301'
   }
 
-  const stays = (siteData?.homestays && siteData.homestays.length >= 3) ? siteData.homestays : defaultHomestays
+  const stays = homestays.length ? homestays : defaultHomestays
 
   const heroImages = useMemo(() => hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=1600&q=75'], [hero.images])
 
@@ -195,6 +196,14 @@ export default function Home() {
     ? fallbackHeroImage
     : resolveImage(currentHeroImage, `hero-${heroImageIndex}`, 2200, 1200)
   const [activeStayImage, setActiveStayImage] = useState(null)
+  const [stayGallery, setStayGallery] = useState({ open: false, title: '', media: [] })
+
+  const openStayGallery = (stay) => {
+    const media = []
+    if (stay.mainImage || stay.image) media.push(stay.mainImage || stay.image)
+    ;(stay.cardGallery || []).forEach((item) => media.push(item))
+    setStayGallery({ open: true, title: stay.name, media })
+  }
   const [preferredStay, setPreferredStay] = useState('No preference')
   const [enquiryAdults, setEnquiryAdults] = useState(2)
   const [enquiryChildAges, setEnquiryChildAges] = useState([])
@@ -373,6 +382,43 @@ export default function Home() {
         </section>
       )}
 
+      {/* WHY CHOOSE US — 6 ICON GRID */}
+      <section className="border-b border-[#e9e3d7] bg-[#faf7ef]">
+        <div className="home-shell py-16 sm:py-20">
+          <div className="mb-10 max-w-2xl">
+            <p className="section-kicker">The Samthar difference</p>
+            <h2 className="section-title mt-3">Why Choose Samthar Hillstay</h2>
+            <p className="mt-4 text-sm leading-6 text-[#5d645f]">
+              Thoughtful comforts, warm local hosts, and the slow rhythm of the hills — everything you need for a restful mountain escape.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { icon: Mountain, title: 'Scenic Views', desc: 'Panoramic Himalayan vistas' },
+              { icon: HeartHandshake, title: 'Local Hosts', desc: 'Warm, personal hospitality' },
+              { icon: UtensilsCrossed, title: 'Home Food', desc: 'Fresh, home-cooked meals' },
+              { icon: Wifi, title: 'Modern Comfort', desc: 'Wi-Fi and cozy amenities' },
+              { icon: Sunrise, title: 'Slow Mornings', desc: 'Peaceful, unhurried stays' },
+              { icon: Trees, title: 'Nature Trails', desc: 'Pine forests and walks' },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <div
+                  key={item.title}
+                  className="flex flex-col items-center rounded-2xl border border-[#e5dbc0] bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-[#caa34b]/15 text-[#b08d3b]">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <h3 className="mt-3 text-sm font-bold text-[#10281e]">{item.title}</h3>
+                  <p className="mt-1 text-[11px] leading-5 text-[#73766d]">{item.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* 2. HOMESTAYS SECTION */}
       {staysSection.visible !== false && <section id="homestays" className="home-section home-shell pb-8 pt-10 sm:pb-12 sm:pt-16">
         <div className="rounded-[32px] border-2 border-[#e5dbc0] p-4 sm:p-6 lg:p-8">
@@ -408,7 +454,7 @@ export default function Home() {
                       <p className="text-xs uppercase tracking-widest text-[#caa34b] font-bold">{stay.location}</p>
                       {stay.priceStarting && (
                         <span className="rounded-full bg-[#10281e]/10 px-3 py-1 text-xs font-bold text-[#10281e]">
-                          From {formatPrice(stay.priceStarting)} {stay.priceLabel || 'per night'}
+                          From {formatPrice(applyDiscount(stay.priceStarting, discount))} {stay.priceLabel || 'per night'}
                         </span>
                       )}
                     </div>
@@ -432,6 +478,13 @@ export default function Home() {
                     >
                       View Details & Rooms
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => openStayGallery(stay)}
+                      className="rounded-full border border-[#caa34b] px-4 py-2 text-xs font-bold text-[#9b782d] transition hover:bg-[#caa34b]/15"
+                    >
+                      View Gallery
+                    </button>
                     <a
                       href="#contact"
                       onClick={() => setPreferredStay(stay.name)}
@@ -503,7 +556,7 @@ export default function Home() {
               <p className="section-kicker">Day trips & surrounding trails</p>
               <h2 className="section-title mt-3">Excursions and Mountain Drives</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {(destinationsData.items || []).map((dest, idx) => (
                 <div key={idx} className="explore-card rounded-2xl border border-[#e5dbc0] bg-white overflow-hidden shadow-sm">
                   <div className="h-44 overflow-hidden">
@@ -587,23 +640,23 @@ export default function Home() {
 
       {/* 6. ATTRACTION CLUSTERS */}
       {clustersData.visible !== false && (
-        <section className="home-shell attractions-section py-9 sm:py-12" style={{ backgroundColor: clustersData.backgroundColor || undefined }}>
+        <section className="home-shell attractions-section py-9 sm:py-12" style={{ backgroundColor: clustersData.backgroundColor || 'var(--paper)' }}>
           <div className="mb-4 max-w-2xl">
-            <p className="section-kicker" style={{ color: clustersData.accentColor || undefined }}>Regional Highlights</p>
-            <h2 className="section-title attractions-heading mt-2" style={{ color: clustersData.headingColor || undefined }}>Attraction Clusters Across Kalimpong & Sikkim</h2>
+            <p className="section-kicker" style={{ color: clustersData.accentColor || 'var(--gold)' }}>Regional Highlights</p>
+            <h2 className="section-title attractions-heading mt-2" style={{ color: clustersData.headingColor || 'var(--pine)' }}>Attraction Clusters Across Kalimpong & Sikkim</h2>
           </div>
           <div className="attraction-grid">
             {(clustersData.clusters || []).map((cluster, index) => (
-              <article key={cluster.title || index} className="attraction-card" style={{ backgroundColor: clustersData.cardBackgroundColor || undefined, borderColor: clustersData.cardBorderColor || undefined }}>
+              <article key={cluster.title || index} className="attraction-card" style={{ backgroundColor: clustersData.cardBackgroundColor || 'var(--paper)', borderColor: clustersData.cardBorderColor || 'var(--line)' }}>
                 <div className="flex items-center gap-2.5">
-                  <span className="display-font grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#e5dbc0] bg-[#f5f0e1] text-[10px] font-bold text-[#9b782d]" style={{ backgroundColor: clustersData.numberBackgroundColor || undefined, borderColor: clustersData.numberBorderColor || undefined, color: clustersData.accentColor || undefined }}>
+                  <span className="display-font grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#e5dbc0] bg-[#f5f0e1] text-[10px] font-bold text-[#9b782d]" style={{ backgroundColor: clustersData.numberBackgroundColor || '#f5f0e1', borderColor: clustersData.numberBorderColor || '#e5dbc0', color: clustersData.accentColor || 'var(--gold)' }}>
                     0{index + 1}
                   </span>
-                  <h3 className="text-[13px] font-bold leading-5 text-[#1b3527]" style={{ color: clustersData.cardHeadingColor || undefined }}>{cluster.title}</h3>
+                  <h3 className="text-[13px] font-bold leading-5 text-[#1b3527]" style={{ color: clustersData.cardHeadingColor || 'var(--pine)' }}>{cluster.title}</h3>
                 </div>
                 <ul className="attraction-list">
                   {(cluster.spots || []).map((place) => (
-                    <li key={place} className="attraction-place" style={{ backgroundColor: clustersData.tagBackgroundColor || undefined, borderColor: clustersData.tagBorderColor || undefined, color: clustersData.tagTextColor || undefined }}>{place}</li>
+                    <li key={place} className="attraction-place" style={{ backgroundColor: clustersData.tagBackgroundColor || '#f4efdf', borderColor: clustersData.tagBorderColor || 'var(--line)', color: clustersData.tagTextColor || 'var(--pine-soft)' }}>{place}</li>
                   ))}
                 </ul>
               </article>
@@ -850,6 +903,13 @@ export default function Home() {
           <p>{activeStayImage.name}</p>
         </div>
       )}
+
+      <GalleryLightbox
+        open={stayGallery.open}
+        onClose={() => setStayGallery((prev) => ({ ...prev, open: false }))}
+        title={stayGallery.title}
+        media={stayGallery.media}
+      />
     </div>
   )
 }

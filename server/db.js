@@ -845,6 +845,10 @@ export function getDefaultSiteData() {
       address: 'Mairung, Kalimpong Hills, West Bengal 734301',
       brochureUrl: '/samthar-brochure.pdf'
     },
+    discount: {
+      enabled: false,
+      percent: 0
+    },
     navigation: {
       logoText: 'Samthar',
       logoSubtitle: 'Kalimpong · West Bengal',
@@ -866,9 +870,17 @@ export function getDefaultSiteData() {
       tagline: 'Made for slower days in the hills ✦',
       exploreLinks: [
         { label: 'Home', href: '/#home' },
-        { label: 'Homestays', href: '/#homestays' },
+        { label: 'Homestays', href: '/homestays' },
         { label: 'Experiences', href: '/#experiences' },
-        { label: 'Gallery', href: '/#gallery' }
+        { label: 'Explore', href: '/#explore' },
+        { label: 'Gallery', href: '/gallery' },
+        { label: 'Reviews', href: '/reviews' },
+        { label: 'Blogs', href: '/blogs' },
+        { label: 'Food & Dining', href: '/#food' },
+        { label: 'Contact', href: '/contact' },
+        { label: 'My Dashboard', href: '/dashboard' },
+        { label: 'Login', href: '/login' },
+        { label: 'Sign Up', href: '/signup' }
       ],
       destinations: ['Darjeeling', 'Sikkim', 'Silk Route', 'Kalimpong Town', 'Lava & Rishyap']
     },

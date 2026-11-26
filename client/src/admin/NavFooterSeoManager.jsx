@@ -153,7 +153,7 @@ export default function NavFooterSeoManager({ content, onChange }) {
 
             <div className="space-y-2">
               {(nav.links || []).map((link, idx) => (
-                <div key={idx} className="flex items-center gap-3 bg-[#0a1711] p-3 rounded-xl border border-white/10">
+                <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 bg-[#0a1711] p-3 rounded-xl border border-white/10">
                   <input
                     type="text"
                     value={link.label}
@@ -163,7 +163,7 @@ export default function NavFooterSeoManager({ content, onChange }) {
                       updateNav('links', updated);
                     }}
                     placeholder="Label"
-                    className="flex-1 bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-medium"
+                    className="w-full sm:flex-1 bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-medium"
                   />
                   <input
                     type="text"
@@ -174,7 +174,7 @@ export default function NavFooterSeoManager({ content, onChange }) {
                       updateNav('links', updated);
                     }}
                     placeholder="URL path (e.g. /#homestays)"
-                    className="flex-1 bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white"
+                    className="w-full sm:flex-1 bg-[#10281e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white"
                   />
                   <button
                     type="button"
@@ -182,7 +182,7 @@ export default function NavFooterSeoManager({ content, onChange }) {
                       const updated = nav.links.filter((_, i) => i !== idx);
                       updateNav('links', updated);
                     }}
-                    className="text-red-400 hover:text-red-300 p-1.5"
+                    className="self-end sm:self-auto text-red-400 hover:text-red-300 p-1.5"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

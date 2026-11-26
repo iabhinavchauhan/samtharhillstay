@@ -1,9 +1,10 @@
-import { useContext } from "react"
+import { useContext, useState } from "react"
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { ResortContext } from "../context/ResortContext.js"
 import HomestayImage from "../components/HomestayImage"
-import { formatPrice } from "../utils/currency"
+import GalleryLightbox from "../components/GalleryLightbox"
+import { formatPrice, applyDiscount } from "../utils/currency"
 
 const cardReveal = {
   hidden: { opacity: 0, y: 30 },
@@ -11,7 +12,15 @@ const cardReveal = {
 }
 
 export default function Homestays() {
-  const { homestays } = useContext(ResortContext)
+  const { homestays, discount } = useContext(ResortContext)
+  const [gallery, setGallery] = useState({ open: false, title: '', media: [] })
+
+  const openGallery = (stay) => {
+    const media = []
+    if (stay.mainImage || stay.image) media.push(stay.mainImage || stay.image)
+    ;(stay.cardGallery || []).forEach((item) => media.push(item))
+    setGallery({ open: true, title: stay.name, media })
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-12">
@@ -41,7 +50,7 @@ export default function Homestays() {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {homestays.map((stay, index) => (
           <motion.article
             key={stay.slug || index}
@@ -53,14 +62,22 @@ export default function Homestays() {
             className="group overflow-hidden rounded-[32px] border border-[#e5dbc0] bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
           >
             <div>
-              <div className="h-72 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => openGallery(stay)}
+                className="relative block h-72 w-full overflow-hidden"
+                aria-label={`Open ${stay.name} photo and video gallery`}
+              >
                 <HomestayImage
                   src={stay.mainImage || stay.image}
                   imageKey={stay.slug || stay.name}
                   alt={stay.name}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
-              </div>
+                <span className="absolute bottom-3 right-3 rounded-full bg-[#10281e]/85 px-3 py-1.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                  View Gallery
+                </span>
+              </button>
               <div className="space-y-4 p-8">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.32em] text-[#9b782d] font-bold">{stay.location}</p>
@@ -72,7 +89,7 @@ export default function Homestays() {
                   <h2 className="text-2xl font-semibold text-[#10281e] font-sans">{stay.name}</h2>
                   {stay.priceStarting && (
                     <span className="text-sm font-bold text-[#caa34b]">
-                      From {formatPrice(stay.priceStarting)}
+                      From {formatPrice(applyDiscount(stay.priceStarting, discount))}
                     </span>
                   )}
                 </div>
@@ -91,7 +108,19 @@ export default function Homestays() {
             </div>
           </motion.article>
         ))}
+        {homestays.length === 0 && (
+          <p className="col-span-full rounded-3xl border border-dashed border-[#e5dbc0] bg-[#faf7ef] px-6 py-12 text-center text-sm text-[#5d645f]">
+            Homestay listings are coming soon. Please check back shortly.
+          </p>
+        )}
       </div>
+
+      <GalleryLightbox
+        open={gallery.open}
+        onClose={() => setGallery((prev) => ({ ...prev, open: false }))}
+        title={gallery.title}
+        media={gallery.media}
+      />
     </div>
   )
 }

@@ -415,6 +415,9 @@ app.put('/api/user/profile', authenticateUser, async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, { returnDocument: 'after' });
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
     res.json({
       success: true,
       message: 'Profile updated successfully!',
@@ -752,8 +755,9 @@ app.post('/api/bookings/create-order', authenticateUser, async (req, res) => {
     const primaryItem = bookingItems[0];
     const bookingRef = `ST-${Math.floor(100000 + Math.random() * 900000)}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
 
-    // Razorpay amount in subunits (paise). All prices are stored in INR.
-    const amountInPaise = Math.round(totalAmount) * 100;
+    // Razorpay amount in subunits (paise). Convert fractional INR to paise
+    // without prematurely rounding the rupee total.
+    const amountInPaise = Math.round(totalAmount * 100);
 
     let razorpayOrderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     // The client only opens the live Razorpay widget for a real gateway order.
@@ -842,6 +846,16 @@ app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
       return res.status(404).json({ error: 'Associated booking reservation not found.' });
     }
 
+    // The order id must match the one created for this booking, and the booking
+    // must still be awaiting payment, to prevent reusing a valid signature from
+    // a cheaper order on a more expensive booking (amount/order binding).
+    if (booking.razorpay_order_id && booking.razorpay_order_id !== razorpay_order_id) {
+      return res.status(400).json({ error: 'Payment order does not match this booking.' });
+    }
+    if (booking.payment_status === 'paid') {
+      return res.status(409).json({ error: 'This booking has already been paid.' });
+    }
+
     // Cryptographic HMAC SHA256 Signature Verification
     let isSignatureValid = false;
     const bodyToSign = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -852,8 +866,13 @@ app.post('/api/bookings/verify-payment', authenticateUser, async (req, res) => {
 
     if (razorpay_signature === expectedSignature) {
       isSignatureValid = true;
-    } else if (razorpay_signature && razorpay_signature.startsWith('simulated_sig_')) {
-      // Test-mode simulated checkout verification
+    } else if (
+      booking.payment_mode === 'simulation' &&
+      razorpay_signature &&
+      razorpay_signature.startsWith('simulated_sig_')
+    ) {
+      // Test-mode simulated checkout verification — only honored when the
+      // booking itself was created in simulation mode.
       isSignatureValid = true;
     }
 
@@ -1013,6 +1032,9 @@ app.post('/api/reviews', async (req, res) => {
 app.post('/api/contact', async (req, res) => {
   try {
     const { name, phone, dates, homestay, guests, adults, childAges, message } = req.body;
+    if (!name || !String(name).trim() || !phone || !String(phone).trim()) {
+      return res.status(400).json({ error: 'Please provide your name and phone number.' });
+    }
     const ages = Array.isArray(childAges) ? childAges.map((age) => Number(age)).filter((age) => Number.isInteger(age) && age >= 0 && age < 18) : [];
     const adultCount = Math.max(1, Number.parseInt(adults || guests || 1, 10));
     const submission = await ContactSubmission.create({

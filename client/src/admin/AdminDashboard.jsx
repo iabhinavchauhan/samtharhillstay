@@ -343,9 +343,10 @@ export default function AdminDashboard() {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setActiveTab('homestays')}
-                        className="bg-[#10281e] p-5 rounded-2xl border border-white/10 cursor-pointer hover:border-[#caa34b]/50 transition group"
+                        className="text-left bg-[#10281e] p-5 rounded-2xl border border-white/10 cursor-pointer hover:border-[#caa34b]/50 transition group"
                       >
                         <p className="text-[10px] font-bold uppercase tracking-wider text-white/50 group-hover:text-[#caa34b] transition">
                           Homestay Offerings
@@ -354,7 +355,7 @@ export default function AdminDashboard() {
                           {content.homestays?.length || 0}
                         </p>
                         <p className="text-[11px] text-[#caa34b] mt-1">Live & Bookable (Click to manage)</p>
-                      </div>
+                      </button>
 
                       <div className="bg-[#10281e] p-5 rounded-2xl border border-white/10">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">
@@ -369,9 +370,10 @@ export default function AdminDashboard() {
 
                     {/* Quick Shortcuts */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setActiveTab('theme')}
-                        className="p-5 bg-[#10281e] hover:bg-[#132c21] rounded-2xl border border-white/10 cursor-pointer transition space-y-2 group"
+                        className="text-left p-5 bg-[#10281e] hover:bg-[#132c21] rounded-2xl border border-white/10 cursor-pointer transition space-y-2 group"
                       >
                         <div className="w-10 h-10 rounded-xl bg-[#caa34b]/20 text-[#caa34b] flex items-center justify-center">
                           <Palette className="w-5 h-5" />
@@ -382,11 +384,12 @@ export default function AdminDashboard() {
                         <p className="text-xs text-white/60">
                           Instant global styling engine: alter forest brand tones, gold accents, and font faces.
                         </p>
-                      </div>
+                      </button>
 
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setActiveTab('media')}
-                        className="p-5 bg-[#10281e] hover:bg-[#132c21] rounded-2xl border border-white/10 cursor-pointer transition space-y-2 group"
+                        className="text-left p-5 bg-[#10281e] hover:bg-[#132c21] rounded-2xl border border-white/10 cursor-pointer transition space-y-2 group"
                       >
                         <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                           <ImageIcon className="w-5 h-5" />
@@ -397,11 +400,12 @@ export default function AdminDashboard() {
                         <p className="text-xs text-white/60">
                           Upload high-resolution photography, manage banners, and replace section visuals.
                         </p>
-                      </div>
+                      </button>
 
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setActiveTab('revisions')}
-                        className="p-5 bg-[#10281e] hover:bg-[#132c21] rounded-2xl border border-white/10 cursor-pointer transition space-y-2 group"
+                        className="text-left p-5 bg-[#10281e] hover:bg-[#132c21] rounded-2xl border border-white/10 cursor-pointer transition space-y-2 group"
                       >
                         <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
                           <History className="w-5 h-5" />
@@ -412,7 +416,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-white/60">
                           Every published change is safely version-controlled. Restore any prior state in 1 click.
                         </p>
-                      </div>
+                      </button>
                     </div>
                   </div>
                 )}

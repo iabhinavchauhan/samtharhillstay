@@ -1,5 +1,5 @@
-import { lazy, Suspense, useContext } from 'react'
-import { BrowserRouter, Route, Routes, Navigate, Outlet } from 'react-router-dom'
+import { lazy, Suspense, useContext, useEffect } from 'react'
+import { BrowserRouter, Route, Routes, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { ResortProvider } from './context/ResortContext.jsx'
 import { AuthProvider } from './admin/AuthContext.jsx'
 import { UserAuthProvider } from './context/UserAuthContext.jsx'
@@ -47,9 +47,37 @@ function PublicLayout() {
   )
 }
 
+function ScrollToHash() {
+  const { pathname, hash } = useLocation()
+
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+      return undefined
+    }
+    const id = decodeURIComponent(hash.slice(1))
+    let attempts = 0
+    let timer
+    const scrollToTarget = () => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        return
+      }
+      attempts += 1
+      if (attempts < 12) timer = window.setTimeout(scrollToTarget, 250)
+    }
+    scrollToTarget()
+    return () => window.clearTimeout(timer)
+  }, [pathname, hash])
+
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToHash />
       <AuthProvider>
         <UserAuthProvider>
           <ResortProvider>

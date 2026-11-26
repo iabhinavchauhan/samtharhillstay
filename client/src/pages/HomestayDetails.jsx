@@ -6,14 +6,14 @@ import HomestayImage from "../components/HomestayImage"
 import { resolveImage } from "../utils/resolveImage"
 import { getVideoEmbedUrl, normalizeGalleryMedia } from "../utils/galleryMedia"
 import { homestays as defaultHomestays } from "../data/resortData"
-import { formatPrice } from "../utils/currency"
+import { formatPrice, applyDiscount } from "../utils/currency"
 import { ShoppingBag, Check, ArrowRight } from "lucide-react"
 
 export default function HomestayDetails() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { toggleWishlist, addRecentView, wishlist, reviews, homestays, foodItems } = useContext(ResortContext)
+  const { toggleWishlist, addRecentView, wishlist, reviews, homestays, foodItems, discount } = useContext(ResortContext)
   const { addToCart, recordRecentView, isAuthenticated, loading: authLoading } = useUserAuth()
 
   const [selectedRoom, setSelectedRoom] = useState(null)
@@ -77,8 +77,9 @@ export default function HomestayDetails() {
 
   const calculatedTotal = useMemo(() => {
     const guestUnits = adults + childAges.reduce((total, age) => total + (Number(age) < 6 ? 0.5 : 1), 0)
-    return (currentRoom?.price || 100) * nights * guestUnits
-  }, [currentRoom, nights, adults, childAges])
+    const base = (currentRoom?.price || 100) * nights * guestUnits
+    return applyDiscount(base, discount)
+  }, [currentRoom, nights, adults, childAges, discount])
 
   useEffect(() => {
     const pendingCartItem = location.state?.pendingCartItem
@@ -335,7 +336,7 @@ export default function HomestayDetails() {
                       <p className="mt-1 text-xs leading-5 text-[#6c7166]">{room.description}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-[#10281e]">{formatPrice(room.price)}</p>
+                      <p className="text-lg font-bold text-[#10281e]">{formatPrice(applyDiscount(room.price, discount))}</p>
                       <span className="text-[10px] text-[#6c7166]">/ guest / night</span>
                     </div>
                   </div>
@@ -346,7 +347,7 @@ export default function HomestayDetails() {
             <div className="mt-6 rounded-2xl bg-[#f4efdf] border border-[#caa34b]/30 p-4 space-y-1 text-xs">
               <div className="flex justify-between text-[#5d645f]">
                 <span>Rate ({nights} {nights === 1 ? 'night' : 'nights'} · {adults} adults · {childAges.length} children)</span>
-                <span>{formatPrice(currentRoom?.price)} per adult/night · children under 6 half rate</span>
+                <span>{formatPrice(applyDiscount(currentRoom?.price, discount))} per adult/night · children under 6 half rate</span>
               </div>
               <div className="flex justify-between items-baseline pt-1 border-t border-[#e5dbc0] text-sm font-bold text-[#10281e]">
                 <span>Estimated Total</span>
@@ -361,7 +362,7 @@ export default function HomestayDetails() {
                   <span>Added to your cart!</span>
                 </span>
                 <Link to="/dashboard?tab=cart" className="font-bold underline hover:text-[#14532d]">
-                  View Cart ?
+                  View Cart
                 </Link>
               </div>
             )}
@@ -424,7 +425,7 @@ export default function HomestayDetails() {
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <div className="rounded-[32px] bg-[#faf7ef] border border-[#e5dbc0] p-6 text-[#5d645f]">
             <p className="text-sm font-semibold text-[#10281e]">Selected room</p>
-            <p className="mt-3 text-sm leading-7 text-[#5d645f]">{selectedRoom || stay.rooms[0].name}</p>
+            <p className="mt-3 text-sm leading-7 text-[#5d645f]">{selectedRoom || stay.rooms?.[0]?.name || 'Suite'}</p>
           </div>
           <div className="rounded-[32px] bg-[#faf7ef] border border-[#e5dbc0] p-6 text-[#5d645f]">
             <p className="text-sm font-semibold text-[#10281e]">Meals included</p>

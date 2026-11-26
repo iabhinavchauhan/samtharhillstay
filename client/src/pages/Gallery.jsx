@@ -173,9 +173,9 @@ const galleryImages = {
 export default function Gallery() {
   return (
     <div className="mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-12">
-      <header className="mb-12 rounded-[36px] border border-smoke/10 bg-smoke/5 p-8 shadow-soft backdrop-blur-xl sm:p-10">
-        <p className="text-xs uppercase tracking-[0.38em] text-sand/70">Gallery</p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-cream sm:text-5xl">
+      <header className="mb-12 rounded-[36px] border border-[#e5dbc0] bg-[#faf7ef] p-8 shadow-sm sm:p-10">
+        <p className="text-xs uppercase tracking-[0.38em] text-[#9b782d] font-bold">Gallery</p>
+        <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-[#10281e] sm:text-5xl">
           A closer look at the mountain light, quiet rooms, and warm host hospitality.
         </h1>
       </header>
@@ -190,16 +190,16 @@ export default function Gallery() {
             <section key={stay.slug} className="space-y-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-sand/70">{stay.location}</p>
-                  <h2 className="mt-3 text-3xl font-semibold text-cream">{stay.name}</h2>
+                  <p className="text-xs uppercase tracking-[0.32em] text-[#9b782d] font-bold">{stay.location}</p>
+                  <h2 className="mt-3 text-3xl font-semibold text-[#10281e]">{stay.name}</h2>
                 </div>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {images.map((src, index) => (
                   <div
                     key={`${stay.slug}-${index}`}
-                    className={`overflow-hidden rounded-[30px] border border-smoke/10 bg-cover bg-center shadow-soft ${index % 3 === 0 ? 'h-80 sm:h-96' : index % 3 === 1 ? 'h-64 sm:h-80' : 'h-72 sm:h-88'}`}
+                    className={`overflow-hidden rounded-[30px] border border-[#e5dbc0] bg-cover bg-center shadow-sm ${index % 3 === 0 ? 'h-80 sm:h-96' : index % 3 === 1 ? 'h-64 sm:h-80' : 'h-72 sm:h-88'}`}
                   >
                     <img src={src} alt={`${stay.name} photo ${index + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   </div>

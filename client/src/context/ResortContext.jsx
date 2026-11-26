@@ -1,6 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../utils/api'
 import { ResortContext } from './ResortContext.js'
+import { homestays as defaultHomestays } from '../data/resortData'
+import { normalizeDiscount } from '../utils/currency'
+
+function reconcileHomestays(savedHomestays = []) {
+  const matchedSavedIndexes = new Set()
+  const completedDefaults = defaultHomestays.map((defaultStay) => {
+    const defaultName = (defaultStay.name || '').trim().toLowerCase()
+    const savedIndex = savedHomestays.findIndex((stay, index) => (
+      !matchedSavedIndexes.has(index) &&
+      ((stay.slug && stay.slug === defaultStay.slug) || (stay.name || '').trim().toLowerCase() === defaultName)
+    ))
+    if (savedIndex === -1) return defaultStay
+    matchedSavedIndexes.add(savedIndex)
+    const savedStay = savedHomestays[savedIndex]
+    return { ...defaultStay, ...savedStay, contact: { ...defaultStay.contact, ...savedStay.contact } }
+  })
+  return [...completedDefaults, ...savedHomestays.filter((_, index) => !matchedSavedIndexes.has(index))]
+}
 
 function loadStorage(key, fallback) {
   try {
@@ -198,8 +216,15 @@ export function ResortProvider({ children }) {
     setBookingDraft((current) => ({ ...current, ...patch }))
   }, [])
 
-  const homestays = useMemo(() => siteData?.homestays || [], [siteData])
+  const homestays = useMemo(
+    () => reconcileHomestays(siteData?.homestays || []),
+    [siteData]
+  )
   const foodItems = useMemo(() => siteData?.foodItems || [], [siteData])
+  const discount = useMemo(
+    () => normalizeDiscount(siteData?.discount),
+    [siteData]
+  )
 
   const value = useMemo(
     () => ({
@@ -219,8 +244,9 @@ export function ResortProvider({ children }) {
       updateBookingDraft,
       homestays,
       foodItems,
+      discount,
     }),
-    [siteData, loading, siteDataError, retrySiteData, wishlist, toggleWishlist, favorites, toggleFavorite, reviews, addReview, recentViews, addRecentView, bookingDraft, updateBookingDraft, homestays, foodItems],
+    [siteData, loading, siteDataError, retrySiteData, wishlist, toggleWishlist, favorites, toggleFavorite, reviews, addReview, recentViews, addRecentView, bookingDraft, updateBookingDraft, homestays, foodItems, discount],
   )
 
   return <ResortContext.Provider value={value}>{children}</ResortContext.Provider>

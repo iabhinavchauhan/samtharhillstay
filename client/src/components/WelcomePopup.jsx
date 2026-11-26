@@ -12,24 +12,20 @@ const highlights = [
 
 export default function WelcomePopup() {
   const { pathname } = useLocation()
-  const [dismissed, setDismissed] = useState(() => {
-    try {
-      return sessionStorage.getItem('samthar-welcome-dismissed') === 'true'
-    } catch {
-      return false
-    }
-  })
+  const [dismissed, setDismissed] = useState(false)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (pathname !== '/' || dismissed) return undefined
+    const timer = window.setTimeout(() => setVisible(true), 5000)
+    return () => window.clearTimeout(timer)
+  }, [pathname, dismissed])
 
   useEffect(() => {
     if (pathname !== '/' || dismissed) return undefined
     const closeOnEscape = (event) => {
       if (event.key === 'Escape') {
         setDismissed(true)
-        try {
-          sessionStorage.setItem('samthar-welcome-dismissed', 'true')
-        } catch {
-          // The popup is still dismissed for this render if storage is unavailable.
-        }
       }
     }
     document.addEventListener('keydown', closeOnEscape)
@@ -38,14 +34,9 @@ export default function WelcomePopup() {
 
   const dismiss = () => {
     setDismissed(true)
-    try {
-      sessionStorage.setItem('samthar-welcome-dismissed', 'true')
-    } catch {
-      // Dismiss for the current render even when storage is unavailable.
-    }
   }
 
-  if (dismissed || pathname !== '/') return null
+  if (dismissed || pathname !== '/' || !visible) return null
 
   return (
     <div className="welcome-overlay" onMouseDown={(event) => {

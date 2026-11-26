@@ -41,15 +41,13 @@ export default function HomestayManager({ content, onChange }) {
   const [selectedStayIndex, setSelectedStayIndex] = useState(0);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageTargetCallback, setImageTargetCallback] = useState(null);
-  const [galleryType, setGalleryType] = useState('image');
-  const [galleryUrl, setGalleryUrl] = useState('');
-  const [galleryUploading, setGalleryUploading] = useState(false);
-  const [galleryError, setGalleryError] = useState('');
+  const [galleryType, setGalleryType] = useState({ gallery: 'image', cardGallery: 'image' });
+  const [galleryUrl, setGalleryUrl] = useState({ gallery: '', cardGallery: '' });
+  const [galleryUploading, setGalleryUploading] = useState({ gallery: false, cardGallery: false });
+  const [galleryError, setGalleryError] = useState({ gallery: '', cardGallery: '' });
 
-  const homestays = content.homestayDefaultsReconciled
-    ? (content.homestays || [])
-    : completeHomestays(content.homestays || []);
-  const currentStay = homestays[selectedStayIndex] || homestays[0];
+  const homestays = completeHomestays(content.homestays || [])
+  const currentStay = homestays[selectedStayIndex] || homestays[0]
 
   const openImagePicker = (cb) => {
     setImageTargetCallback(() => cb);
@@ -58,9 +56,7 @@ export default function HomestayManager({ content, onChange }) {
 
   const updateStayAt = (stayIndex, key, val) => {
     const latestContent = contentRef.current;
-    const updated = latestContent.homestayDefaultsReconciled
-      ? [...(latestContent.homestays || [])]
-      : completeHomestays(latestContent.homestays || []);
+    const updated = completeHomestays(latestContent.homestays || []);
     if (!updated[stayIndex]) return;
     updated[stayIndex] = {
       ...updated[stayIndex],
@@ -71,33 +67,33 @@ export default function HomestayManager({ content, onChange }) {
 
   const updateStay = (key, val) => updateStayAt(selectedStayIndex, key, val);
 
-  const addGalleryUrl = () => {
-    const url = galleryUrl.trim();
+  const addGalleryUrl = (field = 'gallery') => {
+    const url = (galleryUrl[field] || '').trim();
     if (!url) return;
     if (!/^https?:\/\//i.test(url) && !url.startsWith('/uploads/')) {
-      setGalleryError('Use a full http(s) URL or an uploaded /uploads/ path.');
+      setGalleryError((prev) => ({ ...prev, [field]: 'Use a full http(s) URL or an uploaded /uploads/ path.' }));
       return;
     }
-    const item = galleryType === 'video' ? { type: 'video', url } : url;
-    updateStay('gallery', [...(currentStay.gallery || []), item]);
-    setGalleryUrl('');
-    setGalleryError('');
+    const item = galleryType[field] === 'video' ? { type: 'video', url } : url;
+    updateStay(field, [...(currentStay[field] || []), item]);
+    setGalleryUrl((prev) => ({ ...prev, [field]: '' }));
+    setGalleryError((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const uploadGalleryFile = async (event) => {
+  const uploadGalleryFile = async (event, field = 'gallery') => {
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
     const uploadStayIndex = selectedStayIndex;
     const isVideo = file.type.startsWith('video/');
     if (!isVideo && !file.type.startsWith('image/')) {
-      setGalleryError('Choose an image or video file.');
+      setGalleryError((prev) => ({ ...prev, [field]: 'Choose an image or video file.' }));
       input.value = '';
       return;
     }
 
-    setGalleryUploading(true);
-    setGalleryError('');
+    setGalleryUploading((prev) => ({ ...prev, [field]: true }));
+    setGalleryError((prev) => ({ ...prev, [field]: '' }));
     const formData = new FormData();
     formData.append('file', file);
     formData.append('altText', `${currentStay.name} gallery ${file.name}`);
@@ -110,22 +106,76 @@ export default function HomestayManager({ content, onChange }) {
       const data = await response.json();
       const item = isVideo ? { type: 'video', url: data.media.url } : data.media.url;
       const latestContent = contentRef.current;
-      const latestHomestays = latestContent.homestayDefaultsReconciled
-        ? (latestContent.homestays || [])
-        : completeHomestays(latestContent.homestays || []);
+      const latestHomestays = completeHomestays(latestContent.homestays || []);
       const latestStay = latestHomestays[uploadStayIndex];
-      if (latestStay) updateStayAt(uploadStayIndex, 'gallery', [...(latestStay.gallery || []), item]);
+      if (latestStay) updateStayAt(uploadStayIndex, field, [...(latestStay[field] || []), item]);
     } catch (error) {
-      setGalleryError(error.message || 'Could not upload this media file.');
+      setGalleryError((prev) => ({ ...prev, [field]: error.message || 'Could not upload this media file.' }));
     } finally {
-      setGalleryUploading(false);
+      setGalleryUploading((prev) => ({ ...prev, [field]: false }));
       input.value = '';
     }
   };
 
-  const deleteGalleryItem = (mediaIndex) => {
-    updateStay('gallery', (currentStay.gallery || []).filter((_, index) => index !== mediaIndex));
+  const deleteGalleryItem = (mediaIndex, field = 'gallery') => {
+    updateStay(field, (currentStay[field] || []).filter((_, index) => index !== mediaIndex));
   };
+
+  const renderGalleryBlock = (field, heading, description) => (
+    <div className="space-y-4 border-t border-white/10 pt-5">
+      <div>
+        <h4 className="text-sm font-bold text-white">{heading}</h4>
+        <p className="mt-1 text-xs text-white/50">{description}</p>
+      </div>
+
+      <div className="grid gap-3 rounded-xl border border-white/10 bg-[#0a1711] p-4 md:grid-cols-[150px_minmax(0,1fr)_auto_auto] md:items-end">
+        <label className="block text-xs font-semibold text-white/70">Media type
+          <select value={galleryType[field]} onChange={(e) => setGalleryType((prev) => ({ ...prev, [field]: e.target.value }))} className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#10281e] px-3 py-2.5 text-xs text-white">
+            <option value="image">Photo</option>
+            <option value="video">Video</option>
+          </select>
+        </label>
+        <label className="block text-xs font-semibold text-white/70">Media URL
+          <input value={galleryUrl[field]} onChange={(e) => setGalleryUrl((prev) => ({ ...prev, [field]: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addGalleryUrl(field); } }} placeholder={galleryType[field] === 'video' ? 'MP4, YouTube, or Vimeo URL' : 'Image URL'} className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#10281e] px-3 py-2.5 text-xs text-white placeholder:text-white/35" />
+        </label>
+        <button type="button" onClick={() => addGalleryUrl(field)} disabled={!(galleryUrl[field] || '').trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40">
+          <Link2 className="h-3.5 w-3.5" />Add URL
+        </button>
+        <label className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold text-[#10281e] transition ${galleryUploading[field] ? 'bg-[#caa34b]/60' : 'bg-[#caa34b] hover:bg-[#d8b85e]'}`}>
+          <Upload className="h-3.5 w-3.5" />{galleryUploading[field] ? 'Uploading…' : 'Upload from computer'}
+          <input type="file" accept="image/*,video/*" className="hidden" onChange={(e) => uploadGalleryFile(e, field)} disabled={galleryUploading[field]} />
+        </label>
+      </div>
+      {galleryError[field] && <p role="alert" className="rounded-lg border border-red-400/25 bg-red-500/10 px-3 py-2 text-xs text-red-200">{galleryError[field]}</p>}
+
+      {(currentStay[field] || []).length ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {(currentStay[field] || []).map((item, mediaIndex) => {
+            const media = normalizeGalleryMedia(item);
+            const embedUrl = media.type === 'video' ? getVideoEmbedUrl(media.url) : '';
+            const mediaUrl = resolveImage(media.url, `${currentStay.slug}-${field}-${mediaIndex}`);
+            return (
+              <div key={`${media.type}-${media.url || mediaIndex}`} className="group relative overflow-hidden rounded-xl border border-white/10 bg-black/30">
+                {media.type === 'video' ? embedUrl ? (
+                  <iframe src={embedUrl} title={`${currentStay.name} video ${mediaIndex + 1}`} className="h-32 w-full border-0 sm:h-40" loading="lazy" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowFullScreen />
+                ) : (
+                  <video src={mediaUrl} poster={media.poster ? resolveImage(media.poster, `${currentStay.slug}-poster-${mediaIndex}`) : undefined} controls playsInline preload="metadata" className="h-32 w-full object-cover sm:h-40" />
+                ) : (
+                  <img src={mediaUrl} alt={`${currentStay.name} ${field} ${mediaIndex + 1}`} loading="lazy" decoding="async" className="h-32 w-full object-cover sm:h-40" />
+                )}
+                <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+                  <span className="flex min-w-0 items-center gap-1.5 truncate text-[10px] font-medium text-white/70"><span className="shrink-0 text-[#caa34b]">{media.type === 'video' ? <Video className="h-3.5 w-3.5" /> : <ImageIcon className="h-3.5 w-3.5" />}</span><span className="truncate">{media.type === 'video' ? 'Video' : 'Photo'} {mediaIndex + 1}</span></span>
+                  <button type="button" onClick={() => deleteGalleryItem(mediaIndex, field)} aria-label={`Remove ${field} item ${mediaIndex + 1}`} className="shrink-0 rounded-md p-1 text-red-300 transition hover:bg-red-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-white/15 px-4 py-8 text-center text-xs text-white/45">No media yet. Add a photo or video above.</div>
+      )}
+    </div>
+  );
 
   const updateRoom = (roomIdx, key, val) => {
     const rooms = [...(currentStay.rooms || [])];
@@ -217,6 +267,62 @@ export default function HomestayManager({ content, onChange }) {
           <Plus className="w-4 h-4" />
           Add New Homestay
         </button>
+      </div>
+
+      {/* Admin-only global discount control */}
+      <div className="bg-gradient-to-r from-[#1a3a2c] to-[#10281e] p-5 rounded-2xl border border-[#caa34b]/30">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <span className="text-[#caa34b]">%</span>
+              Global Price Discount
+            </h3>
+            <p className="text-xs text-white/60 mt-1 max-w-md">
+              Apply a site-wide discount on all homestay prices. This is only visible to admins and updates the prices shown on the website.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(content.discount?.enabled)}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  const currentPercent = Number(content.discount?.percent) || 0;
+                  onChange({
+                    ...content,
+                    discount: { enabled, percent: enabled && !currentPercent ? 10 : currentPercent },
+                  });
+                }}
+                className="h-4 w-4 accent-[#caa34b]"
+              />
+              Enable discount
+            </label>
+            <select
+              value={Number(content.discount?.percent) || 0}
+              onChange={(e) => {
+                const percent = Number(e.target.value);
+                onChange({
+                  ...content,
+                  discount: { enabled: percent > 0, percent },
+                });
+              }}
+              className="bg-[#0b1d15] text-white text-xs font-semibold rounded-xl border border-white/15 px-3 py-2 focus:outline-none focus:border-[#caa34b]"
+            >
+              <option value={0}>No discount</option>
+              <option value={10}>10% off</option>
+              <option value={20}>20% off</option>
+              <option value={30}>30% off</option>
+              <option value={40}>40% off</option>
+              <option value={50}>50% off</option>
+            </select>
+            {Boolean(content.discount?.enabled) && Number(content.discount?.percent) > 0 && (
+              <span className="text-[11px] font-bold text-[#caa34b] bg-[#caa34b]/15 border border-[#caa34b]/40 px-3 py-1.5 rounded-full">
+                {Number(content.discount.percent)}% OFF applied site-wide
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Selector Tabs */}
@@ -368,60 +474,19 @@ export default function HomestayManager({ content, onChange }) {
             </div>
           </div>
 
+          {/* Card Gallery (shown on the Homestays card "View Gallery") */}
+          {renderGalleryBlock(
+            'cardGallery',
+            'Card Gallery (View Gallery on cards)',
+            'Photos and videos shown when a visitor clicks "View Gallery" on the homestay card. This is separate from the details page gallery.'
+          )}
+
           {/* Homestay Details Gallery */}
-          <div className="space-y-4 border-t border-white/10 pt-5">
-            <div>
-              <h4 className="text-sm font-bold text-white">View Details Gallery</h4>
-              <p className="mt-1 text-xs text-white/50">Add photos or videos from your computer, or paste a direct media link. Save and publish to show changes live.</p>
-            </div>
-
-            <div className="grid gap-3 rounded-xl border border-white/10 bg-[#0a1711] p-4 md:grid-cols-[150px_minmax(0,1fr)_auto_auto] md:items-end">
-              <label className="block text-xs font-semibold text-white/70">Media type
-                <select value={galleryType} onChange={(e) => setGalleryType(e.target.value)} className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#10281e] px-3 py-2.5 text-xs text-white">
-                  <option value="image">Photo</option>
-                  <option value="video">Video</option>
-                </select>
-              </label>
-              <label className="block text-xs font-semibold text-white/70">Media URL
-                <input value={galleryUrl} onChange={(e) => setGalleryUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addGalleryUrl(); } }} placeholder={galleryType === 'video' ? 'MP4, YouTube, or Vimeo URL' : 'Image URL'} className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#10281e] px-3 py-2.5 text-xs text-white placeholder:text-white/35" />
-              </label>
-              <button type="button" onClick={addGalleryUrl} disabled={!galleryUrl.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40">
-                <Link2 className="h-3.5 w-3.5" />Add URL
-              </button>
-              <label className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold text-[#10281e] transition ${galleryUploading ? 'bg-[#caa34b]/60' : 'bg-[#caa34b] hover:bg-[#d8b85e]'}`}>
-                <Upload className="h-3.5 w-3.5" />{galleryUploading ? 'Uploading…' : 'Upload from computer'}
-                <input type="file" accept="image/*,video/*" className="hidden" onChange={uploadGalleryFile} disabled={galleryUploading} />
-              </label>
-            </div>
-            {galleryError && <p role="alert" className="rounded-lg border border-red-400/25 bg-red-500/10 px-3 py-2 text-xs text-red-200">{galleryError}</p>}
-
-            {(currentStay.gallery || []).length ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {currentStay.gallery.map((item, mediaIndex) => {
-                  const media = normalizeGalleryMedia(item);
-                  const embedUrl = media.type === 'video' ? getVideoEmbedUrl(media.url) : '';
-                  const mediaUrl = resolveImage(media.url, `${currentStay.slug}-gallery-${mediaIndex}`);
-                  return (
-                    <div key={`${media.type}-${media.url || mediaIndex}`} className="group relative overflow-hidden rounded-xl border border-white/10 bg-black/30">
-                      {media.type === 'video' ? embedUrl ? (
-                        <iframe src={embedUrl} title={`${currentStay.name} video ${mediaIndex + 1}`} className="h-32 w-full border-0 sm:h-40" loading="lazy" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowFullScreen />
-                      ) : (
-                        <video src={mediaUrl} poster={media.poster ? resolveImage(media.poster, `${currentStay.slug}-poster-${mediaIndex}`) : undefined} controls playsInline preload="metadata" className="h-32 w-full object-cover sm:h-40" />
-                      ) : (
-                        <img src={mediaUrl} alt={`${currentStay.name} gallery ${mediaIndex + 1}`} loading="lazy" decoding="async" className="h-32 w-full object-cover sm:h-40" />
-                      )}
-                      <div className="flex items-center justify-between gap-2 px-2.5 py-2">
-                        <span className="flex min-w-0 items-center gap-1.5 truncate text-[10px] font-medium text-white/70"><span className="shrink-0 text-[#caa34b]">{media.type === 'video' ? <Video className="h-3.5 w-3.5" /> : <ImageIcon className="h-3.5 w-3.5" />}</span><span className="truncate">{media.type === 'video' ? 'Video' : 'Photo'} {mediaIndex + 1}</span></span>
-                        <button type="button" onClick={() => deleteGalleryItem(mediaIndex)} aria-label={`Remove gallery item ${mediaIndex + 1}`} className="shrink-0 rounded-md p-1 text-red-300 transition hover:bg-red-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-white/15 px-4 py-8 text-center text-xs text-white/45">No gallery media yet. Add a photo or video above.</div>
-            )}
-          </div>
+          {renderGalleryBlock(
+            'gallery',
+            'View Details Gallery',
+            'Photos and videos shown on the homestay details page. This is separate from the card gallery.'
+          )}
 
           {/* Rooms and Pricing Table */}
           <div className="pt-4 border-t border-white/10 space-y-4">

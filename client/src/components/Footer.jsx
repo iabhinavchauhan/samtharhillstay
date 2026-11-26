@@ -7,14 +7,24 @@ export default function Footer() {
   const contact = siteData?.contact || {}
   const nav = siteData?.navigation || {}
 
-  const rawExploreLinks = footer.exploreLinks || [
+  const defaultExploreLinks = [
     { label: 'Home', href: '/#home' },
-    { label: 'Homestays', href: '/#homestays' },
     { label: 'Experiences', href: '/#experiences' },
-    { label: 'Gallery', href: '/#gallery' },
+    { label: 'Explore', href: '/#explore' },
+    { label: 'Reviews', href: '/reviews' },
+    { label: 'Blogs', href: '/blogs' },
   ]
 
-  const exploreLinks = rawExploreLinks
+  const savedExploreLinks = footer.exploreLinks || []
+  const removedHrefs = ['/homestays', '/gallery', '/#food', '/contact', '/dashboard', '/login', '/signup']
+  const exploreLinks = [
+    ...defaultExploreLinks,
+    ...savedExploreLinks.filter(
+      (saved) =>
+        !defaultExploreLinks.some((link) => link.href === saved.href) &&
+        !removedHrefs.includes(saved.href)
+    ),
+  ]
 
   const destinations = footer.destinations || ['Darjeeling', 'Sikkim', 'Silk Route']
 

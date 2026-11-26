@@ -294,10 +294,10 @@ test('admin password changes revoke prior sessions and issue a replacement', asy
   assert.equal(changed.status, 200);
   const { token: replacementToken } = await changed.json();
 
-  const oldSession = await fetch(`${origin}/api/admin/users`, { headers: { Authorization: `Bearer ${editorToken}` } });
+  const oldSession = await fetch(`${origin}/api/admin/content/draft`, { headers: { Authorization: `Bearer ${editorToken}` } });
   assert.equal(oldSession.status, 401);
 
-  const newSession = await fetch(`${origin}/api/admin/users`, { headers: { Authorization: `Bearer ${replacementToken}` } });
+  const newSession = await fetch(`${origin}/api/admin/content/draft`, { headers: { Authorization: `Bearer ${replacementToken}` } });
   assert.equal(newSession.status, 200);
 
   const newLogin = await fetch(`${origin}/api/auth/login`, {

@@ -108,10 +108,11 @@ export default function Checkout() {
         body: JSON.stringify(payload)
       });
 
-      const orderData = await orderRes.json();
       if (!orderRes.ok) {
-        throw new Error(orderData.error || 'Failed to initiate booking order.');
+        const errData = await orderRes.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to initiate booking order.');
       }
+      const orderData = await orderRes.json();
 
       setPendingOrderData(orderData);
 
@@ -182,10 +183,11 @@ export default function Checkout() {
         body: JSON.stringify(verificationPayload)
       });
 
-      const verifyData = await verifyRes.json();
       if (!verifyRes.ok) {
-        throw new Error(verifyData.error || 'Payment verification failed on the server.');
+        const errData = await verifyRes.json().catch(() => ({}));
+        throw new Error(errData.error || 'Payment verification failed on the server.');
       }
+      const verifyData = await verifyRes.json();
 
       setPaymentSuccess(verifyData.booking);
     } catch (err) {
