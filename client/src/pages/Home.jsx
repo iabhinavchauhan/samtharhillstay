@@ -8,7 +8,7 @@ import { homestays as defaultHomestays } from '../data/resortData'
 import HomestayImage from '../components/HomestayImage'
 import GalleryLightbox from '../components/GalleryLightbox'
 import { occasionThemeClass } from '../utils/occasionThemes'
-import { Car, MapPin, Mountain, UtensilsCrossed, Wifi, HeartHandshake, Sunrise, Trees } from 'lucide-react'
+import { Car, MapPin, Mountain, HeartHandshake, Route, Leaf, Users, PawPrint, Droplets } from 'lucide-react'
 
 function compressReviewPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -72,7 +72,7 @@ export default function Home() {
     visible: true,
     kicker: 'Our homestays',
     heading: 'Handcrafted hill getaways',
-    description: 'Each stay brings its own rhythm of the hills — from quiet valley panoramas and pine-forest stillness to thoughtful local hosting, slow breakfasts, and restful mountain suites.',
+    description: 'Each stay brings its own rhythm of the hills - from quiet valley panoramas and pine-forest stillness to thoughtful local hosting, slow breakfasts, and restful mountain suites.',
     ...(hp.staysSection || {}),
   }
   const reviewsSection = {
@@ -382,43 +382,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* WHY CHOOSE US — 6 ICON GRID */}
-      <section className="border-b border-[#e9e3d7] bg-[#faf7ef]">
-        <div className="home-shell py-16 sm:py-20">
-          <div className="mb-10 max-w-2xl">
-            <p className="section-kicker">The Samthar difference</p>
-            <h2 className="section-title mt-3">Why Choose Samthar Hillstay</h2>
-            <p className="mt-4 text-sm leading-6 text-[#5d645f]">
-              Thoughtful comforts, warm local hosts, and the slow rhythm of the hills — everything you need for a restful mountain escape.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              { icon: Mountain, title: 'Scenic Views', desc: 'Panoramic Himalayan vistas' },
-              { icon: HeartHandshake, title: 'Local Hosts', desc: 'Warm, personal hospitality' },
-              { icon: UtensilsCrossed, title: 'Home Food', desc: 'Fresh, home-cooked meals' },
-              { icon: Wifi, title: 'Modern Comfort', desc: 'Wi-Fi and cozy amenities' },
-              { icon: Sunrise, title: 'Slow Mornings', desc: 'Peaceful, unhurried stays' },
-              { icon: Trees, title: 'Nature Trails', desc: 'Pine forests and walks' },
-            ].map((item) => {
-              const Icon = item.icon
-              return (
-                <div
-                  key={item.title}
-                  className="flex flex-col items-center rounded-2xl border border-[#e5dbc0] bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                >
-                  <span className="grid h-12 w-12 place-items-center rounded-full bg-[#caa34b]/15 text-[#b08d3b]">
-                    <Icon className="h-6 w-6" />
-                  </span>
-                  <h3 className="mt-3 text-sm font-bold text-[#10281e]">{item.title}</h3>
-                  <p className="mt-1 text-[11px] leading-5 text-[#73766d]">{item.desc}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
       {/* 2. HOMESTAYS SECTION */}
       {staysSection.visible !== false && <section id="homestays" className="home-section home-shell pb-8 pt-10 sm:pb-12 sm:pt-16">
         <div className="rounded-[32px] border-2 border-[#e5dbc0] p-4 sm:p-6 lg:p-8">
@@ -496,6 +459,27 @@ export default function Home() {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-3.5">
+          <div className="flex items-center gap-4 rounded-2xl border border-[#ebd5a4] bg-[#f8e9c8] px-6 py-5 sm:gap-5 sm:px-7">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#153226] text-white sm:h-12 sm:w-12">
+              <PawPrint className="h-5 w-5" strokeWidth={1.6} />
+            </span>
+            <div>
+              <h3 className="text-base font-bold text-[#153226] sm:text-lg">Pet Friendly</h3>
+              <p className="mt-0.5 text-sm text-[#5d645f]">
+                Bring your furry companions along - always welcome, no extra charge.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-2xl bg-[#153226] px-5 py-3.5 text-white sm:px-6 sm:py-4">
+            <Droplets className="h-4 w-4 shrink-0 text-[#caa34b] sm:h-5 sm:w-5" strokeWidth={1.75} />
+            <p className="text-xs font-medium text-white/95 sm:text-sm">
+              Attached washrooms, fresh linen and hot water - every room
+            </p>
           </div>
         </div>
       </section>}
@@ -587,7 +571,7 @@ export default function Home() {
             <p className="section-kicker">Transport &amp; Sightseeing</p>
             <h2 className="section-title mt-3">Getting Here, and Getting Around</h2>
             <span className="mt-4 block h-[3px] w-16 rounded-full bg-[#caa34b]" />
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[#626a61]">Pick-up, drop and local sightseeing arranged end to end — just tell us where you're coming from.</p>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#626a61]">Pick-up, drop and local sightseeing arranged end to end - just tell us where you're coming from.</p>
           </div>
 
           <p className="section-kicker mb-4">Pick-up &amp; Drop From</p>
@@ -679,17 +663,17 @@ export default function Home() {
                   key={idx}
                   type="button"
                   onClick={() => setActiveStayImage({ name: item.title, image: item.image })}
-                  className="group flex min-h-56 w-full items-center gap-5 rounded-[28px] border border-[#e5dfd1] bg-[#fffdf8] p-5 text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md sm:gap-6 sm:p-7"
+                  className="group flex min-h-56 w-full flex-col items-center gap-4 rounded-[28px] border border-[#e5dfd1] bg-[#fffdf8] p-5 text-center shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:gap-6 sm:p-7 sm:text-left"
                 >
                   <img
                     src={item.image}
                     alt={item.title}
                     loading="lazy"
                     decoding="async"
-                    className="h-24 w-24 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
+                    className="h-20 w-20 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
                   />
                   <div className="min-w-0">
-                    <span className="mb-4 grid h-11 w-11 place-items-center rounded-full border border-[#e1d5b3] bg-[#f7f2e5] text-xs font-bold tracking-wide text-[#9b782d]">
+                    <span className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-full border border-[#e1d5b3] bg-[#f7f2e5] text-xs font-bold tracking-wide text-[#9b782d] sm:mx-0">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <h3 className="display-font text-xl font-semibold leading-tight text-[#173528] sm:text-2xl">{item.title}</h3>
@@ -703,7 +687,69 @@ export default function Home() {
           </div>
         </section>
       )}
-      
+
+      {/* 8. WHY CHOOSE SAMTHAR HILLSTAY */}
+      <section className="border-t border-[#e9e3d7] bg-[#f7f6f0] py-16 sm:py-20">
+        <div className="home-shell">
+          <div className="text-center">
+            <h2 className="section-title">Why Choose Samthar Hillstay</h2>
+            <span className="mx-auto mt-4 block h-[2px] w-14 rounded-full bg-[#caa34b]" />
+          </div>
+          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: Mountain,
+                title: 'Scenic locations',
+                desc: 'Every home looks out onto pine forests, ridges or open valley.',
+              },
+              {
+                icon: MapPin,
+                title: 'Convenient location',
+                desc: 'A short drive from NJP, Bagdogra and Siliguri - easy to reach, worlds away.',
+              },
+              {
+                icon: Route,
+                title: 'Road-trip friendly',
+                desc: 'The natural stopover between the plains and the Silk Route or Sikkim.',
+              },
+              {
+                icon: HeartHandshake,
+                title: 'Homely hospitality',
+                desc: 'Homemade food and genuine care from families who live where they host.',
+              },
+              {
+                icon: Leaf,
+                title: 'Peaceful atmosphere',
+                desc: 'Offbeat villages, away from the crowds of the usual hill-station circuit.',
+              },
+              {
+                icon: Users,
+                title: 'Family-friendly',
+                desc: 'Comfortable enough for grandparents, easy enough for kids.',
+              },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <article
+                  key={item.title}
+                  className="rounded-2xl border border-[#ece7da] bg-white p-7 text-left shadow-[0_2px_12px_rgba(16,40,30,0.03)] sm:p-8"
+                >
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#153226] text-white">
+                    <Icon className="h-5 w-5" strokeWidth={1.6} />
+                  </span>
+                  <h3 className="display-font mt-6 text-xl font-semibold text-[#153226]">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2.5 text-sm leading-6 text-[#68706a]">
+                    {item.desc}
+                  </p>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* 9. REVIEWS & TESTIMONIALS */}
       {reviewsSection.visible !== false && <section className="bg-[#10281e] text-white py-12 sm:py-16">
         <div className="home-shell">
@@ -855,8 +901,8 @@ export default function Home() {
             </div>
           </form>
 
-          <aside className="rounded-[28px] bg-[#10281e] p-6 text-white shadow-lg sm:p-8 flex flex-col justify-between">
-            <div>
+          <aside className="min-w-0 rounded-[28px] bg-[#10281e] p-6 text-white shadow-lg sm:p-8 flex flex-col justify-between">
+            <div className="min-w-0">
               <p className="section-kicker !text-[#d0b45e]">{contactSection.assistantKicker}</p>
               <h3 className="display-font mt-3 text-2xl font-semibold">{contactSection.assistantHeading}</h3>
               <p className="mt-2 text-xs leading-5 text-white/65">

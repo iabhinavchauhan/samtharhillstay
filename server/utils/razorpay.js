@@ -149,7 +149,7 @@ export async function checkRazorpayCredentials(keyId, keySecret) {
       ok: true,
       configured: true,
       problems: [],
-      detail: 'Razorpay credentials verified — live gateway checkout is available.'
+      detail: 'Razorpay credentials verified - live gateway checkout is available.'
     };
   } catch (err) {
     return {

@@ -274,9 +274,9 @@ export default function Navbar() {
           </a>
         </div>
 
-        {/* Mobile Hamburger Button */}
+        {/* Mobile / Tablet Hamburger Button */}
         <button
-          className={`grid h-10 w-10 place-items-center rounded-xl border sm:hidden ${
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border lg:hidden ${
             isHome ? 'border-white/25 text-white' : 'border-[#ded8ca] text-[#10281e]'
           }`}
           onClick={() => setOpen((value) => !value)}
@@ -287,9 +287,9 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile / Tablet Dropdown Menu */}
       <nav
-        className={`overflow-hidden transition-all duration-300 sm:hidden ${
+        className={`overflow-hidden transition-all duration-300 lg:hidden ${
           isHome ? 'bg-[#10281e] text-white' : 'bg-[#faf8f1] text-[#10281e]'
         } ${open ? `max-h-[580px] border-t ${isHome ? 'border-white/10' : 'border-[#e8e3d6]'} opacity-100` : 'max-h-0 opacity-0'}`}
       >

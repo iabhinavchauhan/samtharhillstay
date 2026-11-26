@@ -145,7 +145,7 @@ export default function PaymentGatewaySettings() {
   2. Add the values to server/.env:
        RAZORPAY_KEY_ID=rzp_test_XXXXXXXXXXXXXXXX
        RAZORPAY_KEY_SECRET=<your 32-character key secret>
-  3. Save the file — the server restarts automatically and picks up the new keys
+  3. Save the file - the server restarts automatically and picks up the new keys
   4. Run "Verify stored credentials" above`}
           </div>
         )}
