@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { MessageSquare, RefreshCw, Star, Trash2, User } from 'lucide-react'
 import { apiFetch } from '../utils/api'
+import { resolveImage } from '../utils/resolveImage'
 import { useAuth } from './AuthContext.js'
 
 export default function ReviewsManager() {
@@ -88,7 +89,7 @@ export default function ReviewsManager() {
                 <span className="ml-1 text-xs text-white/60">{review.rating}/5</span>
               </div>
               <p className="whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{review.text}</p>
-              {review.image && <img src={review.image} alt={`Photo from ${review.author || 'guest'}`} loading="lazy" decoding="async" className="max-h-56 rounded-xl object-cover" />}
+              {review.image && <img src={resolveImage(review.image, review.author || review.id)} alt={`Photo from ${review.author || 'guest'}`} loading="lazy" decoding="async" className="max-h-56 rounded-xl object-cover" />}
               <time className="block text-[10px] text-white/40">{review.created_at ? new Date(review.created_at).toLocaleString() : ''}</time>
             </article>
           ))}

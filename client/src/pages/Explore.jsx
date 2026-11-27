@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { destinationCategories } from '../data/destinations'
+import { resolveImage } from '../utils/resolveImage'
 
 export default function Explore() {
   return (
@@ -13,7 +14,7 @@ export default function Explore() {
           {destinationCategories.map((item) => (
             <NavLink key={item.id} to="/destinations" className="card category-card">
               <div className="card-media category-media">
-                <img src={item.image} alt={item.title} loading="lazy" />
+                <img src={resolveImage(item.image, item.id || item.title)} alt={item.title} loading="lazy" />
               </div>
               <div className="card-content category-content">
                 <p className="tag">{item.count}</p>

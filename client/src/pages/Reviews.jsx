@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ResortContext } from '../context/ResortContext.js'
+import { resolveImage } from '../utils/resolveImage'
 
 export default function Reviews() {
   const { reviews, addReview } = useContext(ResortContext)
@@ -151,7 +152,7 @@ export default function Reviews() {
         )}
         {reviews.map((review) => (
           <motion.article key={review.id} whileHover={{ y: -4 }} className="rounded-[32px] border border-[#e5dbc0] bg-white p-8 shadow-sm">
-            {review.image && <img src={review.image} alt={`Photo shared by ${review.author}`} loading="lazy" decoding="async" className="mb-6 max-h-64 w-full rounded-2xl object-cover" />}
+            {review.image && <img src={resolveImage(review.image, review.author || review.id)} alt={`Photo shared by ${review.author}`} loading="lazy" decoding="async" className="mb-6 max-h-64 w-full rounded-2xl object-cover" />}
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold text-[#10281e]">{review.author}</h2>

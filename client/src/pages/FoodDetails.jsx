@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { foodPlaces } from '../data/foodPlaces'
+import { resolveImage } from '../utils/resolveImage'
 
 export default function FoodDetails() {
   const { id } = useParams()
@@ -9,9 +10,11 @@ export default function FoodDetails() {
     return <section className="page-shell"><h3>Food place not found</h3></section>
   }
 
+  const heroImage = resolveImage(food.image, food.name || id)
+
   return (
     <section className="page-shell">
-      <div className="detail-hero" style={{ backgroundImage: `linear-gradient(135deg, rgba(7, 15, 27, 0.76), rgba(10, 24, 43, 0.72)), url(${food.image})` }}>
+      <div className="detail-hero" style={{ backgroundImage: `linear-gradient(135deg, rgba(7, 15, 27, 0.76), rgba(10, 24, 43, 0.72)), url(${heroImage})` }}>
         <div>
           <p className="section-label">Food details</p>
           <h3>{food.name}</h3>

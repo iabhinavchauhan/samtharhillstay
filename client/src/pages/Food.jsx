@@ -1,5 +1,6 @@
 import { useContext } from 'react'
 import { ResortContext } from '../context/ResortContext.js'
+import { resolveImage } from '../utils/resolveImage'
 
 export default function Food() {
   const { homestays, foodItems } = useContext(ResortContext)
@@ -33,7 +34,7 @@ export default function Food() {
                 {displayDishes.map((item) => (
                   <article key={item.id} className="overflow-hidden rounded-[32px] border border-smoke/10 bg-smoke/5 shadow-soft">
                     <div className="h-56 overflow-hidden">
-                      <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                      <img src={resolveImage(item.image, item.id || item.name)} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     </div>
                     <div className="space-y-4 p-6">
                       <div className="flex items-center justify-between gap-3">

@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext.js';
 import { apiFetch } from '../utils/api';
 import { formatPrice } from '../utils/currency';
+import { resolveImage } from '../utils/resolveImage';
 import {
   ShieldCheck,
   CreditCard,
@@ -375,9 +376,9 @@ export default function Checkout() {
                   key={idx}
                   className="flex gap-4 rounded-2xl border border-[#eee8da] bg-[#faf8f1] p-4 items-center"
                 >
-                  <img
-                    src={item.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
-                    alt={item.stay_name}
+                    <img
+                      src={resolveImage(item.image, item.stay_name || item.id) || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
+                      alt={item.stay_name}
                     loading="lazy"
                     decoding="async"
                     className="h-16 w-16 rounded-xl object-cover shrink-0"

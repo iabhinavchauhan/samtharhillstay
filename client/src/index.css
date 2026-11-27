@@ -163,11 +163,6 @@ body {
 .explore-section.occasion-theme--holi .explore-decoration { background: radial-gradient(circle at 82% 25%, #e94290 0 35px, transparent 36px), radial-gradient(circle at 68% 48%, #f0b829 0 42px, transparent 43px), radial-gradient(circle at 94% 65%, #30a9a1 0 30px, transparent 31px); opacity: .12; }
 .stay-card { display: grid; grid-template-columns: minmax(250px, .78fr) minmax(0, 1.22fr); align-items: stretch; gap: 12px; overflow: hidden; padding: 22px; background: #fffdf8; border: 1px solid var(--line); border-radius: 24px; }
 .suviksha-card { grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr); }
-.stay-card:nth-child(even) .stay-visual { order: 2; }
-.stay-card:nth-child(even) .stay-copy { order: 1; }
-.stay-card:nth-child(even) .stay-visual { justify-self: end; }
-.stay-card:nth-child(even) .stay-name-seal { order: 1; }
-.stay-card:nth-child(even) .stay-photo { order: 2; }
 .stay-visual { position: relative; display: block; width: min(100%, 448px); min-height: 0; justify-self: center; }
 .suviksha-card .stay-visual { width: min(100%, 520px); }
 .stay-photo { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border: 5px solid #f0eddf; border-radius: 20px; background: #f0eddf; padding: 0; box-shadow: 0 10px 28px rgba(16, 40, 30, .13); cursor: zoom-in; }

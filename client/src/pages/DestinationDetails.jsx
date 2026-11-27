@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { destinations } from '../data/destinations'
+import { resolveImage } from '../utils/resolveImage'
 
 export default function DestinationDetails() {
   const { id } = useParams()
@@ -9,9 +10,11 @@ export default function DestinationDetails() {
     return <section className="page-shell"><h3>Destination not found</h3></section>
   }
 
+  const heroImage = resolveImage(destination.image, destination.name || id)
+
   return (
     <section className="page-shell">
-      <div className="detail-hero" style={{ backgroundImage: `linear-gradient(135deg, rgba(7, 15, 27, 0.76), rgba(10, 24, 43, 0.72)), url(${destination.image})` }}>
+      <div className="detail-hero" style={{ backgroundImage: `linear-gradient(135deg, rgba(7, 15, 27, 0.76), rgba(10, 24, 43, 0.72)), url(${heroImage})` }}>
         <div>
           <p className="section-label">Destination details</p>
           <h3>{destination.name}</h3>

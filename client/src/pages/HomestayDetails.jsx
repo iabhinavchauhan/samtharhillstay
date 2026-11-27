@@ -6,7 +6,7 @@ import HomestayImage from "../components/HomestayImage"
 import { resolveImage } from "../utils/resolveImage"
 import { getVideoEmbedUrl, normalizeGalleryMedia } from "../utils/galleryMedia"
 import { homestays as defaultHomestays } from "../data/resortData"
-import { formatPrice, applyDiscount } from "../utils/currency"
+import { formatPrice, applyDiscount, normalizeDiscount } from "../utils/currency"
 import { ShoppingBag, Check, ArrowRight } from "lucide-react"
 
 export default function HomestayDetails() {
@@ -80,6 +80,23 @@ export default function HomestayDetails() {
     const base = (currentRoom?.price || 100) * nights * guestUnits
     return applyDiscount(base, discount)
   }, [currentRoom, nights, adults, childAges, discount])
+
+  const priceBreakdown = useMemo(() => {
+    const guestUnits = adults + childAges.reduce((total, age) => total + (Number(age) < 6 ? 0.5 : 1), 0)
+    const basePrice = Number(currentRoom?.price) || 100
+    const discountedPrice = applyDiscount(basePrice, discount)
+    const baseTotal = basePrice * nights * guestUnits
+    const { enabled, percent } = normalizeDiscount(discount)
+    const discountAmount = enabled && percent > 0 ? baseTotal - calculatedTotal : 0
+    return {
+      basePrice,
+      discountedPrice,
+      guestUnits,
+      baseTotal,
+      discountAmount,
+      hasDiscount: enabled && percent > 0,
+    }
+  }, [currentRoom, nights, adults, childAges, discount, calculatedTotal])
 
   useEffect(() => {
     const pendingCartItem = location.state?.pendingCartItem
@@ -269,7 +286,11 @@ export default function HomestayDetails() {
                   <input
                     type="date"
                     value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
+                    onChange={(e) => {
+                      const next = e.target.value
+                      setCheckIn(next)
+                      if (next > checkOut) setCheckOut(next)
+                    }}
                     className="mt-1 w-full rounded-lg bg-white border border-[#e5dbc0] p-2 text-xs text-[#10281e] outline-none focus:border-[#caa34b]"
                   />
                 </div>
@@ -277,6 +298,7 @@ export default function HomestayDetails() {
                   <label className="text-[10px] uppercase font-bold text-[#9b782d]">Check-out</label>
                   <input
                     type="date"
+                    min={checkIn}
                     value={checkOut}
                     onChange={(e) => setCheckOut(e.target.value)}
                     className="mt-1 w-full rounded-lg bg-white border border-[#e5dbc0] p-2 text-xs text-[#10281e] outline-none focus:border-[#caa34b]"
@@ -344,15 +366,35 @@ export default function HomestayDetails() {
               ))}
             </div>
 
-            <div className="mt-6 rounded-2xl bg-[#f4efdf] border border-[#caa34b]/30 p-4 space-y-1 text-xs">
-              <div className="flex justify-between text-[#5d645f]">
-                <span>Rate ({nights} {nights === 1 ? 'night' : 'nights'} · {adults} adults · {childAges.length} children)</span>
-                <span>{formatPrice(applyDiscount(currentRoom?.price, discount))} per adult/night · children under 6 half rate</span>
+            <div className="mt-6 rounded-2xl bg-[#f4efdf] border border-[#caa34b]/30 p-4 space-y-2">
+              <div className="flex justify-between text-[10px] text-[#5d645f]">
+                <span>Room rate per night</span>
+                <span className={priceBreakdown.hasDiscount
+                  ? 'flex items-baseline gap-1 text-[#caa34b] font-semibold'
+                  : 'text-[#5d645f]'}>
+                  {priceBreakdown.hasDiscount && (
+                    <span className="line-through text-[#9ca3af] text-xs mr-1">{formatPrice(priceBreakdown.basePrice)}</span>
+                  )}
+                  {formatPrice(priceBreakdown.discountedPrice)}
+                </span>
               </div>
-              <div className="flex justify-between items-baseline pt-1 border-t border-[#e5dbc0] text-sm font-bold text-[#10281e]">
+              <div className="flex justify-between text-[10px] text-[#5d645f]">
+                <span>{nights} {nights === 1 ? 'night' : 'nights'} × {priceBreakdown.guestUnits} guest{priceBreakdown.guestUnits !== 1 ? 's' : ''}</span>
+                <span>{formatPrice(priceBreakdown.basePrice * priceBreakdown.guestUnits)} / night</span>
+              </div>
+              {priceBreakdown.hasDiscount && (
+                <div className="flex justify-between text-[10px] text-[#59645a]">
+                  <span>Discount ({Math.round(normalizeDiscount(discount).percent)}% off)</span>
+                  <span className="text-[#10281e] font-semibold">−{formatPrice(priceBreakdown.discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-baseline pt-2 border-t border-[#e5dbc0] text-sm font-bold text-[#10281e]">
                 <span>Estimated Total</span>
                 <span className="text-lg text-[#caa34b]">{formatPrice(calculatedTotal)}</span>
               </div>
+              <p className="mt-1 text-[9px] text-[#9ca3af] leading-tight">
+                Children under 6: half rate · Age 6 and above: full rate
+              </p>
             </div>
 
             {cartSuccess && (

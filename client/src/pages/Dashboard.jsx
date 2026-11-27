@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext.js';
 import { formatPrice } from '../utils/currency';
+import { resolveImage } from '../utils/resolveImage';
 import {
   User,
   ShoppingBag,
@@ -530,9 +531,9 @@ export default function Dashboard() {
                       className="rounded-[24px] border border-[#e5dfd1] bg-[#fffdf8] p-5 shadow-sm transition hover:shadow-md"
                     >
                       <div className="flex flex-col sm:flex-row gap-4">
-                        <img
-                          src={item.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
-                          alt={item.stay_name}
+                          <img
+                            src={resolveImage(item.image, item.stay_name || item.id) || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
+                            alt={item.stay_name}
                           loading="lazy"
                           decoding="async"
                           className="h-28 w-full sm:w-36 rounded-2xl object-cover shrink-0"
@@ -775,9 +776,9 @@ export default function Dashboard() {
                         </span>
                       </div>
                       <div className="flex gap-3 items-center">
-                        <img
-                          src={booking.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
-                          alt={booking.stay_name}
+                          <img
+                            src={resolveImage(booking.image, booking.stay_name || booking.id) || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
+                            alt={booking.stay_name}
                           loading="lazy"
                           decoding="async"
                           className="h-14 w-14 rounded-xl object-cover shrink-0"
@@ -879,9 +880,9 @@ export default function Dashboard() {
 
                     <div className="mt-4 flex flex-col sm:flex-row gap-5 items-start sm:items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <img
-                          src={booking.image || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
-                          alt={booking.stay_name}
+                          <img
+                            src={resolveImage(booking.image, booking.stay_name || booking.id) || 'https://thepinegetaways.com/images/homestays/mairung.jpg'}
+                            alt={booking.stay_name}
                           loading="lazy"
                           decoding="async"
                           className="h-20 w-20 rounded-2xl object-cover shrink-0"

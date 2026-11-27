@@ -2,6 +2,7 @@ import { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { CompareContext } from '../context/CompareContext.js'
 import { WishlistContext } from '../context/WishlistContext.js'
+import { resolveImage } from '../utils/resolveImage'
 
 export default function FoodCard({ item, panelless = false }) {
   const { toggleWishlist, wishlist } = useContext(WishlistContext)
@@ -11,7 +12,7 @@ export default function FoodCard({ item, panelless = false }) {
   return (
     <article className="card card-with-image">
       <div className="card-media">
-        <img src={item.image} alt={item.name} loading="lazy" />
+        <img src={resolveImage(item.image, item.id || item.name)} alt={item.name} loading="lazy" />
       </div>
       <div className={`card-content${panelless ? ' panelless' : ''}`}>
         <p className="tag">{item.location}</p>

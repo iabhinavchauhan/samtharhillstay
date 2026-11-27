@@ -281,6 +281,7 @@ export default function Home() {
   const [preferredStay, setPreferredStay] = useState('No preference')
   const [enquiryAdults, setEnquiryAdults] = useState(2)
   const [enquiryChildAges, setEnquiryChildAges] = useState([])
+  const [enquiryCheckIn, setEnquiryCheckIn] = useState('')
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewPhoto, setReviewPhoto] = useState('')
   const [reviewForm, setReviewForm] = useState({ author: '', location: '', staySlug: '', text: '' })
@@ -456,16 +457,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Site-wide Discount Banner */}
-      {discount.enabled && discount.percent > 0 && (
-        <div className="bg-gradient-to-r from-[#caa34b] to-[#d8b85e] px-4 py-3">
-          <div className="max-w-[1240px] mx-auto flex items-center justify-center gap-2 text-white text-sm font-bold">
-            <span aria-hidden="true">🎉</span>
-            <span>Limited Time Offer: <span className="font-extrabold">{discount.percent}% OFF</span> on all homestays! Use code <span className="underline">HILLSTAY{discount.percent}</span> at booking.</span>
-          </div>
-        </div>
-      )}
-
       {/* 2. HOMESTAYS SECTION */}
       {staysSection.visible !== false && <section id="homestays" className="home-section home-shell pb-8 pt-10 sm:pb-12 sm:pt-16">
         <div className="rounded-[32px] border-2 border-[#e5dbc0] p-4 sm:p-6 lg:p-8">
@@ -479,7 +470,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {discount.enabled && discount.percent > 0 && (
               <div className="bg-[#caa34b] text-[#10281e] rounded-2xl px-5 py-3.5 text-center text-sm font-bold flex items-center justify-center gap-2 border border-[#caa34b]">
                 <span aria-hidden="true">🎉</span>
@@ -502,25 +493,29 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="stay-content flex flex-col justify-between">
-                  <div>
+                  <div className="w-full">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs uppercase tracking-widest text-[#caa34b] font-bold">{stay.location}</p>
-                      {stay.priceStarting && (
-                        <>
-                          {discount.enabled && discount.percent > 0 && (
-                            <span className="rounded-full bg-[#caa34b] px-2.5 py-1 text-[10px] font-extrabold text-[#10281e]">
-                              {discount.percent}% OFF
+                      <div className="flex flex-wrap items-center gap-1">
+                        {stay.priceStarting && (
+                          <>
+                            {discount.enabled && discount.percent > 0 && (
+                              <span className="rounded-full bg-[#caa34b] px-2.5 py-1 text-[10px] font-extrabold text-[#10281e]">
+                                {discount.percent}% OFF
+                              </span>
+                            )}
+                            <span className="rounded-full bg-[#10281e]/10 px-3 py-1 text-xs font-bold text-[#10281e]">
+                              From {formatPrice(applyDiscount(stay.priceStarting, discount))} {stay.priceLabel || 'per night'}
                             </span>
-                          )}
-                          <span className="rounded-full bg-[#10281e]/10 px-3 py-1 text-xs font-bold text-[#10281e]">
-                            From {formatPrice(applyDiscount(stay.priceStarting, discount))} {stay.priceLabel || 'per night'}
-                          </span>
-                        </>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
                     <h3 className="display-font mt-2 text-2xl font-bold text-[#10281e]">{stay.name}</h3>
-                    <p className="mt-2 text-xs italic text-[#6c7166]">{stay.tagline}</p>
-                    <p className="mt-3 text-sm leading-6 text-[#5d645f]">{stay.description}</p>
+                    <div className="mt-2 flex flex-wrap items-baseline gap-2 text-xs">
+                      <p className="italic text-[#6c7166]">{stay.tagline}</p>
+                      <p className="leading-6 text-[#5d645f] text-sm">{stay.description}</p>
+                    </div>
                     {stay.points && (
                       <ul className="mt-4 space-y-1.5 text-xs text-[#4a554d]">
                         {stay.points.map((pt, i) => (
@@ -613,7 +608,7 @@ export default function Home() {
             {(experiencesData.items || []).map((exp, idx) => (
               <div key={idx} className="rounded-2xl border border-[#e5dbc0] bg-white overflow-hidden shadow-sm group">
                 <div className="h-48 overflow-hidden relative">
-                  <img src={exp.image} alt={exp.alt || exp.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                  <img src={resolveImage(exp.image, exp.title || exp.id)} alt={exp.alt || exp.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                   <span className="absolute top-3 left-3 bg-[#10281e]/80 text-[#caa34b] font-mono font-bold text-xs px-2.5 py-1 rounded-lg backdrop-blur-sm">
                     {exp.number || `0${idx + 1}`}
                   </span>
@@ -641,7 +636,7 @@ export default function Home() {
               {(destinationsData.items || []).map((dest, idx) => (
                 <div key={idx} className="explore-card rounded-2xl border border-[#e5dbc0] bg-white overflow-hidden shadow-sm">
                   <div className="h-44 overflow-hidden">
-                    <img src={dest.image} alt={dest.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                    <img src={resolveImage(dest.image, dest.name || dest.id)} alt={dest.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </div>
                   <div className="p-5 space-y-3">
                     <h3 className="explore-card-title display-font text-lg font-bold text-[#10281e]">{dest.name}</h3>
@@ -827,12 +822,12 @@ export default function Home() {
                   onClick={() => setActiveStayImage({ name: item.title, image: item.image })}
                   className="group flex min-h-56 w-full flex-col items-center gap-4 rounded-[28px] border border-[#e5dfd1] bg-[#fffdf8] p-5 text-center shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:gap-6 sm:p-7 sm:text-left"
                 >
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-20 w-20 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
+                    <img
+                      src={resolveImage(item.image, item.title || item.id)}
+                      alt={item.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-20 w-20 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
                   />
                   <div className="min-w-0">
                     <span className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-full border border-[#e1d5b3] bg-[#f7f2e5] text-xs font-bold tracking-wide text-[#9b782d] sm:mx-0">
@@ -901,7 +896,7 @@ export default function Home() {
             </form>
 
             {/* Reviews List */}
-            <div className="space-y-4">
+          <div className="space-y-6">
               <div className="flex items-center justify-between text-sm text-white/70">
                 <span className="font-semibold text-white">Recent Guest Feedback</span>
                 <span>{reviews.length} total</span>
@@ -959,11 +954,11 @@ export default function Home() {
               </label>
               <label className="text-[11px] font-semibold text-[#415044]">
                 Arrival Date *
-                <input className="enquiry-input mt-2" name="checkin" type="date" min={todayDate} required />
+                <input className="enquiry-input mt-2" name="checkin" type="date" min={todayDate} onChange={(e) => setEnquiryCheckIn(e.target.value)} required />
               </label>
               <label className="text-[11px] font-semibold text-[#415044]">
                 Departure Date *
-                <input className="enquiry-input mt-2" name="checkout" type="date" min={todayDate} required />
+                <input className="enquiry-input mt-2" name="checkout" type="date" min={enquiryCheckIn || todayDate} required />
               </label>
               <div className="grid gap-4 sm:grid-cols-2 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-[#415044]">
@@ -1045,7 +1040,7 @@ export default function Home() {
           onClick={() => setActiveStayImage(null)}
         >
           <button type="button" className="stay-lightbox-close" onClick={() => setActiveStayImage(null)}>×</button>
-          <img src={activeStayImage.image} alt={activeStayImage.name} />
+          <img src={resolveImage(activeStayImage.image, activeStayImage.name)} alt={activeStayImage.name} />
           <p>{activeStayImage.name}</p>
         </div>
       )}

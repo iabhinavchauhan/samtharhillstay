@@ -594,7 +594,7 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
             {(homepage.experiences?.items || []).map((exp, idx) => (
               <div key={idx} className="bg-[#0a1711] p-4 rounded-xl border border-white/10 flex gap-4">
                 <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-white/15 relative group">
-                  <img src={exp.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <img src={resolveImage(exp.image, exp.title || exp.id || idx)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => {
@@ -693,7 +693,7 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
             {(homepage.destinations?.items || []).map((dest, idx) => (
               <div key={idx} className="bg-[#0a1711] p-4 rounded-xl border border-white/10 space-y-3">
                 <div className="h-32 rounded-lg overflow-hidden border border-white/15 relative group">
-                  <img src={dest.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <img src={resolveImage(dest.image, dest.name || dest.id || idx)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => {
@@ -823,7 +823,7 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
             {(homepage.gallerySection?.items || []).map((item, idx) => (
               <div key={idx} className="bg-[#0a1711] rounded-xl border border-white/10 overflow-hidden flex flex-col">
                 <div className="h-28 relative group">
-                  <img src={item.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <img src={resolveImage(item.image, item.title || item.name || item.id || idx)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => {
