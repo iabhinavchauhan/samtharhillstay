@@ -16,7 +16,7 @@ export default function Navbar() {
       { to: '/#home', label: 'Home' },
       { to: '/#homestays', label: 'Homestays' },
       { to: '/#experiences', label: 'Experiences' },
-      { to: '/#explore', label: 'Explore' },
+      { to: '/#why-choose', label: 'Explore' },
       { to: '/#gallery', label: 'Gallery' },
       { to: '/#contact', label: 'Contact' },
     ]
@@ -268,7 +268,7 @@ export default function Navbar() {
 
           <a
             href="/#contact"
-            className="rounded-[10px] bg-[var(--accent-gold,#caa34b)] px-3.5 py-2 text-[11px] font-semibold text-[#17291e] transition hover:bg-[var(--accent-gold-hover,#d8b85e)]"
+            className="rounded-[10px] bg-[#D8B85E] px-3.5 py-2 text-[11px] font-semibold text-[#17291e] transition hover:bg-[#c9a94f]"
           >
             {nav.ctaText || 'Book Your Stay'}
           </a>
@@ -294,19 +294,31 @@ export default function Navbar() {
         } ${open ? `max-h-[580px] border-t ${isHome ? 'border-white/10' : 'border-[#e8e3d6]'} opacity-100` : 'max-h-0 opacity-0'}`}
       >
         <div className="grid grid-cols-2 gap-1 px-4 py-3">
-          {navLinks.filter((l) => l.visible !== false).map((link) => (
+          {/* Nav Links + Brochure in grid so Brochure sits next to Blogs */}
+          {[
+            ...navLinks.filter((l) => l.visible !== false),
+            {
+              to: contact.brochureUrl || "/samthar-brochure.pdf",
+              label: 'Open Brochure ↗',
+              visible: true,
+              isBrochure: true,
+              external: true,
+            },
+          ].map((link) => (
             <a
               key={link.to || link.label}
               href={link.to}
-              aria-current={isHome && activeSection === (link.to || '').split('#')[1] ? 'location' : undefined}
+              target={link.external ? '_blank' : undefined}
+              rel={link.external ? 'noreferrer' : undefined}
+              aria-current={isHome && !link.isBrochure && activeSection === (link.to || '').split('#')[1] ? 'location' : undefined}
               className={`px-3 py-2.5 text-sm ${
-                isHome && activeSection === (link.to || '').split('#')[1]
+                isHome && !link.isBrochure && activeSection === (link.to || '').split('#')[1]
                   ? 'bg-white/10 text-white'
                   : isHome
                   ? 'text-white/85 hover:bg-white/10'
                   : 'text-[#324239] hover:bg-[#eeeadc]'
               }`}
-              onClick={() => setOpen(false)}
+              onClick={() => !link.external && setOpen(false)}
             >
               {link.label}
             </a>
@@ -349,29 +361,17 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/signup"
-                className="rounded-lg bg-[#caa34b] py-2 text-center text-xs font-semibold text-[#10281e]"
+                className="rounded-lg border border-[#caa34b] py-2 text-center text-xs font-semibold text-[#caa34b]"
                 onClick={() => setOpen(false)}
               >
                 Create Account
               </Link>
-            </div>
-          )}
+</div>
+            )}
 
-          <a
-            href={contact.brochureUrl || "/samthar-brochure.pdf"}
-            target="_blank"
-            rel="noreferrer"
-            className={`col-span-2 rounded-lg px-3 py-2 text-sm ${
-              isHome ? 'text-white/85 hover:bg-white/10' : 'text-[#324239] hover:bg-[#eeeadc]'
-            }`}
-            onClick={() => setOpen(false)}
-          >
-            Open Brochure ↗
-          </a>
-
-          <a
+            <a
             href="/#contact"
-            className="col-span-2 rounded-[10px] bg-[var(--accent-gold,#caa34b)] px-3 py-3 text-center text-sm font-semibold text-[#17291e]"
+            className="col-span-2 rounded-[10px] bg-[#D8B85E] px-3 py-3 text-center text-sm font-semibold text-[#17291e]"
             onClick={() => setOpen(false)}
           >
             {nav.ctaText || 'Book Your Stay'}

@@ -7,6 +7,11 @@ import {
   Link2,
   Image as ImageIcon,
   Video,
+  Phone,
+  Mail,
+  MessageSquare,
+  MapPin,
+  Check,
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
 import { CURRENCY_SYMBOL, formatPrice } from '../utils/currency';
@@ -43,8 +48,9 @@ export default function HomestayManager({ content, onChange }) {
   const [imageTargetCallback, setImageTargetCallback] = useState(null);
   const [galleryType, setGalleryType] = useState({ gallery: 'image', cardGallery: 'image' });
   const [galleryUrl, setGalleryUrl] = useState({ gallery: '', cardGallery: '' });
-  const [galleryUploading, setGalleryUploading] = useState({ gallery: false, cardGallery: false });
-  const [galleryError, setGalleryError] = useState({ gallery: '', cardGallery: '' });
+  const [galleryUploading, setGalleryUploading] = useState({ gallery: false, cardGallery: false, mainImage: false });
+  const [galleryError, setGalleryError] = useState({ gallery: '', cardGallery: '', mainImage: '' });
+  const [mainImageUrl, setMainImageUrl] = useState('');
 
   const homestays = completeHomestays(content.homestays || [])
   const currentStay = homestays[selectedStayIndex] || homestays[0]
@@ -113,6 +119,39 @@ export default function HomestayManager({ content, onChange }) {
       setGalleryError((prev) => ({ ...prev, [field]: error.message || 'Could not upload this media file.' }));
     } finally {
       setGalleryUploading((prev) => ({ ...prev, [field]: false }));
+      input.value = '';
+    }
+  };
+
+  const uploadMainImageFile = async (event) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setGalleryError((prev) => ({ ...prev, mainImage: 'Choose an image file.' }));
+      input.value = '';
+      return;
+    }
+
+    const uploadStayIndex = selectedStayIndex;
+    setGalleryUploading((prev) => ({ ...prev, mainImage: true }));
+    setGalleryError((prev) => ({ ...prev, mainImage: '' }));
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('altText', `${currentStay.name} main image`);
+    try {
+      const response = await apiFetch('/api/admin/homestay-gallery/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not upload main image.');
+      updateStayAt(uploadStayIndex, 'mainImage', data.media.url);
+    } catch (error) {
+      setGalleryError((prev) => ({ ...prev, mainImage: error.message || 'Could not upload this image.' }));
+    } finally {
+      setGalleryUploading((prev) => ({ ...prev, mainImage: false }));
       input.value = '';
     }
   };
@@ -222,10 +261,10 @@ export default function HomestayManager({ content, onChange }) {
         { name: 'Valley Room', description: 'Serene mountain views with pine wood interior.', price: 100 }
       ],
       contact: {
-        phone: '+91 98046 00910',
-        email: 'stay@samthar.com',
-        whatsapp: '+91 98046 00910',
-        address: 'Kalimpong, West Bengal'
+        phone: '+91 98765 43210',
+        email: 'stay@newhomestay.com',
+        whatsapp: '+91 98765 43210',
+        address: 'Location, State'
       }
     };
 
@@ -455,22 +494,158 @@ export default function HomestayManager({ content, onChange }) {
             />
           </div>
 
-          {/* Featured Main Image */}
-          <div className="pt-2">
-            <label className="block text-xs font-semibold text-white/70 mb-2">Featured Main Image</label>
-            <div className="flex items-center gap-4">
-              <div className="w-40 h-24 rounded-xl overflow-hidden border border-white/15 bg-black/40 shrink-0">
-                <img src={currentStay.mainImage} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          {/* Highlights / Points (Bullet points on homestay cards) */}
+          <div className="pt-4 border-t border-white/10 space-y-4">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#caa34b]" />
+              Highlights / Key Points
+            </h4>
+            <p className="text-[11px] text-white/50">These appear as checkmark bullet points on the homestay card and details page.</p>
+            {(currentStay.points || []).map((point, idx) => (
+              <div key={idx} className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#10281e] p-2">
+                <input
+                  type="text"
+                  value={point}
+                  onChange={(e) => {
+                    const updated = [...(currentStay.points || [])];
+                    updated[idx] = e.target.value;
+                    updateStay('points', updated);
+                  }}
+                  className="flex-1 bg-[#0a1711] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = (currentStay.points || []).filter((_, i) => i !== idx);
+                    updateStay('points', updated);
+                  }}
+                  className="text-red-400 hover:text-red-300 p-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  openImagePicker((newImg) => updateStay('mainImage', newImg));
-                }}
-                className="px-4 py-2 bg-[#caa34b] text-[#10281e] font-bold text-xs rounded-xl shadow hover:bg-[#d8b85e] transition"
-              >
-                Change Main Image
-              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const items = currentStay.points || [];
+                updateStay('points', [...items, 'New highlight']);
+              }}
+              className="px-3 py-1.5 bg-[#caa34b] text-[#10281e] font-semibold text-xs rounded-lg flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Highlight
+            </button>
+          </div>
+
+          {/* Contact Details */}
+          <div className="pt-4 border-t border-white/10 space-y-4">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Phone className="w-4 h-4 text-[#caa34b]" />
+              Contact Details
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={currentStay.contact?.phone || ''}
+                  onChange={(e) => updateStay('contact', { ...currentStay.contact, phone: e.target.value })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">WhatsApp</label>
+                <input
+                  type="tel"
+                  value={currentStay.contact?.whatsapp || ''}
+                  onChange={(e) => updateStay('contact', { ...currentStay.contact, whatsapp: e.target.value })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={currentStay.contact?.email || ''}
+                  onChange={(e) => updateStay('contact', { ...currentStay.contact, email: e.target.value })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="stay@homestay.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Address</label>
+                <input
+                  type="text"
+                  value={currentStay.contact?.address || ''}
+                  onChange={(e) => updateStay('contact', { ...currentStay.contact, address: e.target.value })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="Location, State"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Featured Main Image */}
+          <div className="pt-2 space-y-3">
+            <label className="block text-xs font-semibold text-white/70">Featured Main Image</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-white/10 bg-[#0a1711] p-4">
+              <div className="w-40 h-24 rounded-xl overflow-hidden border border-white/15 bg-black/40 shrink-0">
+                <img
+                  src={resolveImage(currentStay.mainImage || currentStay.image, `${currentStay.slug || currentStay.name}-main`)}
+                  alt={currentStay.name || 'Homestay main image'}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 space-y-3 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openImagePicker((newImg) => updateStay('mainImage', newImg));
+                    }}
+                    className="px-4 py-2 bg-[#caa34b] text-[#10281e] font-bold text-xs rounded-xl shadow hover:bg-[#d8b85e] transition"
+                  >
+                    Change Main Image
+                  </button>
+                  <label className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 ${galleryUploading.mainImage ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <Upload className="h-3.5 w-3.5 text-[#caa34b]" />
+                    {galleryUploading.mainImage ? 'Uploading…' : 'Upload from computer'}
+                    <input type="file" accept="image/*" className="hidden" onChange={uploadMainImageFile} disabled={galleryUploading.mainImage} />
+                  </label>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={mainImageUrl}
+                    onChange={(e) => setMainImageUrl(e.target.value)}
+                    placeholder="Or paste main image URL (https://... or /uploads/...)"
+                    className="flex-1 rounded-lg border border-white/10 bg-[#10281e] px-3 py-2 text-xs text-white placeholder:text-white/35 focus:outline-none focus:border-[#caa34b]"
+                  />
+                  <button
+                    type="button"
+                    disabled={!mainImageUrl.trim()}
+                    onClick={() => {
+                      const trimmed = mainImageUrl.trim();
+                      if (!trimmed) return;
+                      updateStay('mainImage', trimmed);
+                      setMainImageUrl('');
+                    }}
+                    className="rounded-lg bg-white/10 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Apply URL
+                  </button>
+                </div>
+                {galleryError.mainImage && (
+                  <p role="alert" className="rounded-lg border border-red-400/25 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {galleryError.mainImage}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,11 +1,21 @@
 const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
 
+// Generate a cache-busting token based on current date (changes daily)
+// For more aggressive cache busting, use a timestamp or version from backend
+function getCacheBuster() {
+  const now = new Date()
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+}
+
 export function resolveImage(src, key, width = 1200, height = 800) {
   if (!src || typeof src !== 'string') return src
 
   // Uploads are served by the API host, which can differ from the website host.
   if (src.startsWith('/uploads/') && configuredApiBaseUrl) {
-    return `${configuredApiBaseUrl}${src}`
+    const base = `${configuredApiBaseUrl}${src}`
+    // Add cache-busting query parameter for uploaded images
+    const separator = base.includes('?') ? '&' : '?'
+    return `${base}${separator}v=${getCacheBuster()}`
   }
 
   // If image already looks local or from picsum, return as-is

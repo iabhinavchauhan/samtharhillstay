@@ -85,12 +85,19 @@ export default function Homestays() {
                     {stay.rooms?.length || 1} rooms
                   </span>
                 </div>
-                <div className="flex items-baseline justify-between gap-2">
+<div className="flex items-baseline justify-between gap-2">
                   <h2 className="text-2xl font-semibold text-[#10281e] font-sans">{stay.name}</h2>
                   {stay.priceStarting && (
-                    <span className="text-sm font-bold text-[#caa34b]">
-                      From {formatPrice(applyDiscount(stay.priceStarting, discount))}
-                    </span>
+                    <>
+                      {discount.enabled && discount.percent > 0 && (
+                        <span className="rounded-full bg-[#caa34b] px-2.5 py-1 text-[10px] font-extrabold text-[#10281e] mr-2">
+                          {discount.percent}% OFF
+                        </span>
+                      )}
+                      <span className="text-sm font-bold text-[#caa34b]">
+                        From {formatPrice(applyDiscount(stay.priceStarting, discount))}
+                      </span>
+                    </>
                   )}
                 </div>
                 <p className="text-xs italic text-[#6c7166]">{stay.tagline}</p>

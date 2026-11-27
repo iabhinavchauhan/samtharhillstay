@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
+import { occasionThemes } from '../utils/occasionThemes';
 
 export default function ThemeCustomizer({ theme, onChange, onReset }) {
   const [activeTab, setActiveTab] = useState('colors');
@@ -37,8 +38,8 @@ export default function ThemeCustomizer({ theme, onChange, onReset }) {
       name: 'Misty Blue Ridge',
       primaryColor: '#1e2b37',
       primaryDark: '#121c24',
-      accentGold: '#38bdf8',
-      accentGoldHover: '#60a5fa',
+      accentGold: '#D8B85E',
+      accentGoldHover: '#c9a94f',
       backgroundColor: '#f8fafc',
       textColor: '#0f172a'
     },
@@ -128,6 +129,33 @@ export default function ThemeCustomizer({ theme, onChange, onReset }) {
       {/* Tab 1: Colors */}
       {activeTab === 'colors' && (
         <div className="space-y-6">
+          {/* Site-Wide Occasion Theme */}
+          <div className="bg-[#10281e] p-5 rounded-2xl border border-[#caa34b]/30">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-white/85 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#caa34b]" />
+                  Site-Wide Occasion Background Theme
+                </h3>
+                <p className="text-[11px] text-white/55 mt-1">
+                  Keep Default for the standard website look, or switch to Christmas / festive themes to transform the entire website background and accents.
+                </p>
+              </div>
+              <select
+                aria-label="Site-Wide Occasion Background Theme"
+                value={theme.occasionTheme || 'default'}
+                onChange={(e) => update('occasionTheme', e.target.value)}
+                className="bg-[#0a1711] text-white text-xs font-semibold rounded-xl border border-white/15 px-4 py-2.5 focus:outline-none focus:border-[#caa34b] sm:min-w-[220px]"
+              >
+                {occasionThemes.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Quick Presets */}
           <div className="bg-[#10281e] p-5 rounded-2xl border border-white/10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white/70 mb-3 flex items-center gap-1.5">
@@ -180,7 +208,7 @@ export default function ThemeCustomizer({ theme, onChange, onReset }) {
             {/* Accent Gold */}
             <div className="bg-[#10281e] p-5 rounded-2xl border border-white/10 space-y-3">
               <label className="block text-xs font-bold uppercase text-white/80">Accent Color (Gold / Mustard)</label>
-              <p className="text-[11px] text-white/50">Used for call-to-actions, badges, icons, highlights, and stars.</p>
+              <p className="text-[11px] text-white/50">Used for badges, icons, highlights, and stars. Note: CTA buttons (Book Your Stay) have a fixed color and are not affected by this setting.</p>
               <div className="flex items-center gap-3">
                 <input
                   type="color"

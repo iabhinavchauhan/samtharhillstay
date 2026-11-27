@@ -29,7 +29,7 @@ export default function Footer() {
   const destinations = footer.destinations || ['Darjeeling', 'Sikkim', 'Silk Route']
 
   return (
-    <footer className="relative overflow-hidden bg-[var(--primary-color,#10281e)] px-5 py-14 text-[#e9e7d9] sm:px-8 sm:py-16">
+    <footer className="relative overflow-hidden bg-[#10281e] px-5 py-14 text-[#e9e7d9] sm:px-8 sm:py-16">
       <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#d2b45f]/[.07] blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 left-[28%] h-80 w-80 rounded-full bg-[#78a486]/[.08] blur-3xl" />
       <div className="relative mx-auto max-w-[1240px]">
@@ -41,7 +41,7 @@ export default function Footer() {
                 <span className="display-font block text-2xl font-semibold tracking-wide text-white">
                   {nav.logoText || 'Samthar'}
                 </span>
-                <span className="mt-1 block text-[9px] font-bold uppercase tracking-[.24em] text-[var(--accent-gold,#d2b45f)]">
+                <span className="mt-1 block text-[9px] font-bold uppercase tracking-[.24em] text-[#D8B85E]">
                   {nav.logoSubtitle || 'Kalimpong · West Bengal'}
                 </span>
               </span>
@@ -61,7 +61,7 @@ export default function Footer() {
           </div>
 
           <nav aria-label="Footer quick links">
-            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--accent-gold,#d2b45f)]">Explore</h3>
+            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[.22em] text-[#D8B85E]">Explore</h3>
             <ul className="space-y-3 text-sm text-[#d9dfd5]">
               {exploreLinks.map((link, idx) => (
                 <li key={idx}><a href={link.href} className="footer-link">{link.label}</a></li>
@@ -70,7 +70,7 @@ export default function Footer() {
           </nav>
 
           <div>
-            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--accent-gold,#d2b45f)]">Find your way</h3>
+            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[.22em] text-[#D8B85E]">Find your way</h3>
             <ul className="space-y-3 text-sm text-[#d9dfd5]">
               {destinations.map((dest, idx) => (
                 <li key={idx}>{dest}</li>
@@ -79,22 +79,22 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--accent-gold,#d2b45f)]">Get in touch</h3>
+            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[.22em] text-[#D8B85E]">Get in touch</h3>
             <div className="space-y-4 text-sm text-[#d9dfd5]">
               <a href={`tel:${contact.phoneLink || contact.phone || '+919804600910'}`} className="footer-link flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/[.07] text-[var(--accent-gold,#e2c96f)]">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/[.07] text-[#D8B85E]">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a15 15 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z" /></svg>
                 </span>
                 {contact.phone || '+91 98046 00910'}
               </a>
               <p className="flex items-center gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[.07] text-[var(--accent-gold,#e2c96f)]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[.07] text-[#D8B85E]">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
                 </span>
                 <span>{nav.logoText || 'Samthar'}<br /><span className="text-xs text-[#aeb9ae]">{contact.address || contact.location || 'Kalimpong, West Bengal'}</span></span>
               </p>
               <a href={`mailto:${contact.email || 'stay@samtharhillstay.com'}`} className="footer-link flex items-center gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[.07] text-[var(--accent-gold,#e2c96f)]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[.07] text-[#D8B85E]">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
                 </span>
                 <span>Email<br /><span className="text-xs text-[#aeb9ae]">{contact.email || 'stay@samtharhillstay.com'}</span></span>
@@ -106,7 +106,7 @@ export default function Footer() {
         <div className="flex flex-col gap-3 pt-6 text-xs text-[#9faea1] sm:flex-row sm:items-center sm:justify-between">
           <p>{footer.copyrightText || `© ${new Date().getFullYear()} Samthar. All rights reserved.`}</p>
           <div className="flex items-center gap-4">
-            <p>{footer.tagline || 'Made for slower days in the hills'} <span className="text-[var(--accent-gold,#d2b45f)]">✦</span></p>
+            <p>{footer.tagline || 'Made for slower days in the hills'} <span className="text-[#D8B85E]">✦</span></p>
             <a href="/admin/login" className="text-white/40 hover:text-[#caa34b] transition text-[11px] font-medium flex items-center gap-1">
               <span>🔒 Admin Login</span>
             </a>

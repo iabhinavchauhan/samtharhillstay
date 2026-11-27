@@ -84,6 +84,7 @@ export function ResortProvider({ children }) {
           if (actual.theme.displayFont) root.style.setProperty('--display-font', actual.theme.displayFont)
           if (actual.theme.borderRadius) root.style.setProperty('--border-radius', actual.theme.borderRadius)
           if (actual.theme.buttonRadius) root.style.setProperty('--button-radius', actual.theme.buttonRadius)
+          root.dataset.occasionTheme = actual.theme.occasionTheme || 'default'
         }
 
         // Apply dynamic SEO title and description

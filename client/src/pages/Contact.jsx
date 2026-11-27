@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { Link } from 'react-router-dom'
-import { homestays } from '../data/resortData'
+import { ResortContext } from '../context/ResortContext.js'
 import { apiFetch } from '../utils/api'
 
 export default function Contact() {
+  const { homestays, siteData } = useContext(ResortContext)
+  const contactPage = siteData?.contactPage || {}
+  
   const [form, setForm] = useState({ name: '', phone: '', message: '' })
   const [status, setStatus] = useState({ state: 'idle', message: '' })
 
@@ -33,13 +36,15 @@ export default function Contact() {
     }
   }
 
+  if (contactPage.visible === false) return null
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-12">
       <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[40px] border border-[#e5dbc0] bg-[#faf7ef] p-10 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.35em] text-[#9b782d] font-bold">Contact</p>
-          <h1 className="mt-4 text-4xl font-semibold text-[#10281e]">Let's plan your homestay escape.</h1>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-[#5d645f]">Tell us your travel dates, party size, and preferences, and we will help craft a calm mountain retreat experience.</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-[#9b782d] font-bold">{contactPage.kicker || 'Contact'}</p>
+          <h1 className="mt-4 text-4xl font-semibold text-[#10281e]">{contactPage.title || 'Let\'s plan your homestay escape.'}</h1>
+          <p className="mt-5 max-w-2xl text-base leading-8 text-[#5d645f]">{contactPage.subtitle || 'Tell us your travel dates, party size, and preferences, and we will help craft a calm mountain retreat experience.'}</p>
 
           <form onSubmit={handleSubmit} className="mt-10 space-y-6 rounded-[32px] border border-[#e5dbc0] bg-white p-8">
             <label className="block text-sm font-medium text-[#5d645f]">
@@ -91,7 +96,7 @@ export default function Contact() {
 
         <aside className="space-y-6">
           <div className="rounded-[40px] border border-[#e5dbc0] bg-[#faf7ef] p-8 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.35em] text-[#9b782d] font-bold">Homestay contacts</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-[#9b782d] font-bold">{contactPage.contactsHeading || 'Homestay contacts'}</p>
             <div className="mt-5 space-y-6 text-sm text-[#5d645f]">
               {homestays.map((stay) => (
                 <div key={stay.slug} className="rounded-3xl border border-[#e5dbc0] bg-white p-5">
@@ -105,11 +110,11 @@ export default function Contact() {
             </div>
           </div>
           <div className="rounded-[40px] border border-[#e5dbc0] bg-[#faf7ef] p-8 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.35em] text-[#9b782d] font-bold">Message us</p>
-            <h2 className="mt-4 text-2xl font-semibold text-[#10281e]">Book the right homestay</h2>
-            <p className="mt-4 text-sm leading-7 text-[#5d645f]">Tell us which stay you prefer and we will connect you to the right host and package.</p>
-            <Link to="/homestays" className="mt-6 inline-flex rounded-full bg-[#10281e] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1f4233]">
-              Browse homestays
+            <p className="text-xs uppercase tracking-[0.35em] text-[#9b782d] font-bold">{contactPage.messageUsHeading || 'Message us'}</p>
+            <h2 className="mt-4 text-2xl font-semibold text-[#10281e]">{contactPage.messageUsTitle || 'Book the right homestay'}</h2>
+            <p className="mt-4 text-sm leading-7 text-[#5d645f]">{contactPage.messageUsDescription || 'Tell us which stay you prefer and we will connect you to the right host and package.'}</p>
+            <Link to={contactPage.messageUsButtonLink || '/homestays'} className="mt-6 inline-flex rounded-full bg-[#10281e] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1f4233]">
+              {contactPage.messageUsButtonText || 'Browse homestays'}
             </Link>
           </div>
         </aside>

@@ -885,7 +885,7 @@ export function getDefaultSiteData() {
       destinations: ['Darjeeling', 'Sikkim', 'Silk Route', 'Kalimpong Town', 'Lava & Rishyap']
     },
     homepage: {
-      sectionsOrder: ['hero', 'stays', 'reasons', 'experiences', 'destinations', 'clusters', 'gallery', 'reviews', 'contact'],
+      sectionsOrder: ['hero', 'welcomePopup', 'stays', 'reasons', 'experiences', 'destinations', 'clusters', 'gallery', 'reviews', 'contactPage', 'contact'],
       hero: {
         visible: true,
         tagline: 'OFFBEAT KALIMPONG · SLOW RETREATS',
@@ -981,6 +981,25 @@ export function getDefaultSiteData() {
           { title: 'Grilled skewers', type: 'Food', image: 'https://thepinegetaways.com/images/gallery/food-grilled-skewers.jpg' },
           { title: 'Porch time in Pradhan Gaon', type: 'Experiences', image: 'https://thepinegetaways.com/images/gallery/experiences-porch-chat.jpg' }
         ]
+      },
+      welcomePopup: {
+        visible: true,
+        kicker: 'Welcome',
+        title: 'Samthar Hillstay',
+        tagline: 'YOUR HOME ABOVE THE HILLS',
+        description: 'Find your quiet corner in the Kalimpong hills. Stay with welcoming local hosts, wake to mountain views, and take each day at your own pace.',
+        highlights: [
+          'Scenic mountain views',
+          'Authentic homestay experience',
+          'Comfortable accommodation',
+          'Peaceful surroundings',
+          'Family-friendly',
+          'Perfect for couples and groups',
+        ],
+        primaryButtonText: 'Explore Homestays',
+        primaryButtonLink: '/#homestays',
+        secondaryButtonText: 'Maybe later',
+        logo: '/favicon.png',
       },
     },
     homestays: [
@@ -1079,5 +1098,18 @@ export function getDefaultSiteData() {
         }
       }
     ]
-  };
+  ,
+  contactPage: {
+    visible: true,
+    kicker: 'Contact',
+    title: 'Let\'s plan your homestay escape.',
+    subtitle: 'Tell us your travel dates, party size, and preferences, and we will help craft a calm mountain retreat experience.',
+    contactsHeading: 'Homestay contacts',
+    messageUsHeading: 'Message us',
+    messageUsTitle: 'Book the right homestay',
+    messageUsDescription: 'Tell us which stay you prefer and we will connect you to the right host and package.',
+    messageUsButtonText: 'Browse homestays',
+    messageUsButtonLink: '/homestays',
+  }
+};
 }

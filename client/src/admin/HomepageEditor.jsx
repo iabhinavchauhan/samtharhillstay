@@ -17,6 +17,27 @@ import { homestays as defaultHomestays } from '../data/resortData'
 
 const heroOccasionThemes = occasionThemes.filter((theme) => ['default', 'christmas'].includes(theme.value))
 
+// Default welcome popup values (matching server/db.js defaults)
+const defaultWelcomePopup = {
+  visible: true,
+  kicker: 'Welcome',
+  title: 'Samthar Hillstay',
+  tagline: 'YOUR HOME ABOVE THE HILLS',
+  description: 'Find your quiet corner in the Kalimpong hills. Stay with welcoming local hosts, wake to mountain views, and take each day at your own pace.',
+  highlights: [
+    'Scenic mountain views',
+    'Authentic homestay experience',
+    'Comfortable accommodation',
+    'Peaceful surroundings',
+    'Family-friendly',
+    'Perfect for couples and groups',
+  ],
+  primaryButtonText: 'Explore Homestays',
+  primaryButtonLink: '/#homestays',
+  secondaryButtonText: 'Maybe later',
+  logo: '/favicon.png',
+}
+
 export default function HomepageEditor({ content, onChange, onNavigate }) {
   const { reviews = [] } = useContext(ResortContext)
   const [activeSectionKey, setActiveSectionKey] = useState('hero');
@@ -24,7 +45,7 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
   const [imageTargetCallback, setImageTargetCallback] = useState(null);
 
   const homepage = content.homepage || {};
-  const homepageStays = content.homestays?.length >= 3 ? content.homestays : defaultHomestays;
+  const welcomePopup = homepage.welcomePopup || defaultWelcomePopup
 
   const openImagePicker = (callback) => {
     setImageTargetCallback(() => callback);
@@ -49,16 +70,27 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
   };
 
   // Section Ordering & Visibility
-  const configuredOrder = (homepage.sectionsOrder || [
+  const defaultOrder = [
     'hero',
+    'welcomePopup',
     'stays',
     'reasons',
     'experiences',
     'destinations',
     'clusters',
     'gallery',
-    'reviews'
-  ]).filter((section) => section !== 'faq' && section !== 'contact');
+    'reviews',
+    'contactPage'
+  ];
+  
+  // Merge saved order with defaults, ensuring welcomePopup is included
+  const savedOrder = homepage.sectionsOrder || [];
+  const hasWelcomePopup = savedOrder.includes('welcomePopup');
+  const mergedOrder = hasWelcomePopup
+    ? savedOrder
+    : [...savedOrder.filter(s => defaultOrder.includes(s)), ...defaultOrder.filter(s => !savedOrder.includes(s))];
+  
+  const configuredOrder = mergedOrder.filter((section) => section !== 'faq' && section !== 'contact');
   const sectionsOrder = [...configuredOrder, ...['stays', 'reviews'].filter((section) => !configuredOrder.includes(section))];
 
   const moveSection = (idx, dir) => {
@@ -280,6 +312,154 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome Popup Section */}
+      {activeSectionKey === 'welcomePopup' && (
+        <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#caa34b]" />
+              Welcome Popup
+            </h3>
+            <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={welcomePopup.visible !== false}
+                onChange={(e) => updateHp('welcomePopup', 'visible', e.target.checked)}
+                className="rounded accent-[#caa34b]"
+              />
+              <span>Popup Visible on Homepage</span>
+            </label>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase text-white/70 border-b border-white/10 pb-2">Basic Content</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Top Kicker</label>
+                <input
+                  type="text"
+                  value={welcomePopup.kicker}
+                  onChange={(e) => updateHp('welcomePopup', 'kicker', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Main Title</label>
+                <input
+                  type="text"
+                  value={welcomePopup.title}
+                  onChange={(e) => updateHp('welcomePopup', 'title', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Tagline</label>
+                <input
+                  type="text"
+                  value={welcomePopup.tagline}
+                  onChange={(e) => updateHp('welcomePopup', 'tagline', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Logo Image URL</label>
+                <input
+                  type="text"
+                  value={welcomePopup.logo}
+                  onChange={(e) => updateHp('welcomePopup', 'logo', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="/favicon.png or https://..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-white/70 mb-1">Description</label>
+              <textarea
+                value={welcomePopup.description}
+                onChange={(e) => updateHp('welcomePopup', 'description', e.target.value)}
+                rows={3}
+                className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase text-white/70 border-b border-white/10 pb-2">Highlights / Feature List</h4>
+            <p className="text-[11px] text-white/50">Each highlight appears with a checkmark icon in the popup.</p>
+            {(welcomePopup.highlights || []).map((highlight, idx) => (
+              <div key={idx} className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#10281e] p-2">
+                <input
+                  type="text"
+                  value={highlight}
+                  onChange={(e) => {
+                    const updated = [...(homepage.welcomePopup?.highlights || [])];
+                    updated[idx] = e.target.value;
+                    updateHp('welcomePopup', 'highlights', updated);
+                  }}
+                  className="flex-1 bg-[#0a1711] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = (welcomePopup.highlights || []).filter((_, i) => i !== idx);
+                    updateHp('welcomePopup', 'highlights', updated);
+                  }}
+                  className="text-red-400 hover:text-red-300 p-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const items = welcomePopup.highlights || [];
+                updateHp('welcomePopup', 'highlights', [...items, 'New highlight']);
+              }}
+              className="px-3 py-1.5 bg-[#caa34b] text-[#10281e] font-semibold text-xs rounded-lg flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Highlight
+            </button>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase text-white/70 border-b border-white/10 pb-2">Action Buttons</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Primary Button Text</label>
+                <input
+                  type="text"
+                  value={welcomePopup.primaryButtonText}
+                  onChange={(e) => updateHp('welcomePopup', 'primaryButtonText', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Primary Button Link</label>
+                <input
+                  type="text"
+                  value={welcomePopup.primaryButtonLink}
+                  onChange={(e) => updateHp('welcomePopup', 'primaryButtonLink', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="/#homestays"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Secondary Button Text</label>
+                <input
+                  type="text"
+                  value={welcomePopup.secondaryButtonText}
+                  onChange={(e) => updateHp('welcomePopup', 'secondaryButtonText', e.target.value)}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -708,7 +888,46 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
             <div><h3 className="text-base font-bold text-white">Homepage Stays Section</h3><p className="mt-1 text-xs text-white/60">These are the stays currently displayed on the homepage. Edit their details in Homestays & Pricing.</p></div>
             <label className="flex items-center gap-2 text-xs text-white/80"><input type="checkbox" checked={homepage.staysSection?.visible !== false} onChange={(e) => updateHp('staysSection', 'visible', e.target.checked)} className="accent-[#caa34b]" />Visible</label>
           </div>
-          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4"><p className="mb-3 text-xs font-bold text-white/80">Currently shown stays ({homepageStays.length})</p><div className="grid gap-2 sm:grid-cols-2">{homepageStays.map((stay) => <div key={stay.slug || stay.name} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/75">{stay.name} <span className="text-white/40">· {stay.location || 'Homestay'}</span></div>)}</div><button type="button" onClick={() => onNavigate?.('homestays')} className="mt-4 rounded-lg bg-[#caa34b] px-3 py-2 text-xs font-semibold text-[#10281e]">Manage stays, photos & pricing</button></div>
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4">
+            <p className="mb-3 text-xs font-bold text-white/80">Currently shown stays ({homepageStays.length})</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {homepageStays.map((stay, idx) => (
+                <div key={stay.slug || stay.name || idx} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#10281e] p-3">
+                  <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-white/15 bg-black/40">
+                    <img
+                      src={resolveImage(stay.mainImage || stay.image, `${stay.slug || stay.name}-main`)}
+                      alt={stay.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-white">{stay.name}</p>
+                    <p className="truncate text-[11px] text-white/50">{stay.location || 'Homestay'}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openImagePicker((newImg) => {
+                          const baseStays = content.homestays?.length ? content.homestays : defaultHomestays;
+                          const updatedStays = baseStays.map((s, sIdx) => (
+                            (s.slug && stay.slug ? s.slug === stay.slug : sIdx === idx)
+                              ? { ...s, mainImage: newImg }
+                              : s
+                          ));
+                          onChange({ ...content, homestays: updatedStays, homestayDefaultsReconciled: true });
+                        });
+                      }}
+                      className="mt-2 rounded-lg bg-[#caa34b] px-2.5 py-1 text-[11px] font-bold text-[#10281e] transition hover:bg-[#d8b85e]"
+                    >
+                      Change Main Image
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={() => onNavigate?.('homestays')} className="mt-4 rounded-lg bg-[#caa34b] px-3 py-2 text-xs font-semibold text-[#10281e]">Manage stays, photos & pricing</button>
+          </div>
         </div>
       )}
 
@@ -717,6 +936,127 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
           <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4"><div><h3 className="text-base font-bold text-white">Homepage Guest Reviews</h3><p className="mt-1 text-xs text-white/60">This is the same live review list rendered on the homepage.</p></div><label className="flex items-center gap-2 text-xs text-white/80"><input type="checkbox" checked={homepage.reviewsSection?.visible !== false} onChange={(e) => updateHp('reviewsSection', 'visible', e.target.checked)} className="accent-[#caa34b]" />Visible</label></div>
           <div className="space-y-2">{reviews.length ? reviews.slice(0, 8).map((review) => <div key={review.id} className="rounded-xl border border-white/10 bg-[#0a1711] p-3"><div className="flex justify-between gap-3 text-xs"><strong className="text-white">{review.author}</strong><span className="text-[#caa34b]">{'★'.repeat(review.rating || 5)}</span></div><p className="mt-1 line-clamp-2 text-xs text-white/65">{review.text}</p></div>) : <p className="rounded-xl border border-white/10 bg-[#0a1711] p-4 text-xs text-white/55">No reviews are currently published on the homepage.</p>}</div>
           <button type="button" onClick={() => onNavigate?.('reviews')} className="rounded-lg bg-[#caa34b] px-3 py-2 text-xs font-semibold text-[#10281e]">Manage homepage reviews</button>
+        </div>
+      )}
+
+      {/* Contact Page Section */}
+      {activeSectionKey === 'contactPage' && (
+        <div className="bg-[#10281e] p-6 rounded-2xl border border-white/10 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Mail className="w-4 h-4 text-[#caa34b]" />
+              Contact Page
+            </h3>
+            <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={content.contactPage?.visible !== false}
+                onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, visible: e.target.checked } })}
+                className="rounded accent-[#caa34b]"
+              />
+              <span>Contact Page Visible</span>
+            </label>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase text-white/70 border-b border-white/10 pb-2">Main Form Section</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Top Kicker</label>
+                <input
+                  type="text"
+                  value={content.contactPage?.kicker || ''}
+                  onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, kicker: e.target.value } })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Main Title</label>
+                <input
+                  type="text"
+                  value={content.contactPage?.title || ''}
+                  onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, title: e.target.value } })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-white/70 mb-1">Subtitle / Description</label>
+              <textarea
+                rows={3}
+                value={content.contactPage?.subtitle || ''}
+                onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, subtitle: e.target.value } })}
+                className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase text-white/70 border-b border-white/10 pb-2">Homestay Contacts Section</h4>
+            <div>
+              <label className="block text-xs font-semibold text-white/70 mb-1">Section Heading</label>
+              <input
+                type="text"
+                value={content.contactPage?.contactsHeading || ''}
+                onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, contactsHeading: e.target.value } })}
+                className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase text-white/70 border-b border-white/10 pb-2">Message Us Section</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Section Heading</label>
+                <input
+                  type="text"
+                  value={content.contactPage?.messageUsHeading || ''}
+                  onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, messageUsHeading: e.target.value } })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Main Title</label>
+                <input
+                  type="text"
+                  value={content.contactPage?.messageUsTitle || ''}
+                  onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, messageUsTitle: e.target.value } })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-white/70 mb-1">Description</label>
+              <textarea
+                rows={3}
+                value={content.contactPage?.messageUsDescription || ''}
+                onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, messageUsDescription: e.target.value } })}
+                className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Button Text</label>
+                <input
+                  type="text"
+                  value={content.contactPage?.messageUsButtonText || ''}
+                  onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, messageUsButtonText: e.target.value } })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Button Link</label>
+                <input
+                  type="text"
+                  value={content.contactPage?.messageUsButtonLink || ''}
+                  onChange={(e) => onChange({ ...content, contactPage: { ...content.contactPage, messageUsButtonLink: e.target.value } })}
+                  className="w-full bg-[#10281e] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#caa34b]"
+                  placeholder="/homestays"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

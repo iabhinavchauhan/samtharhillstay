@@ -22,12 +22,16 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard'))
 import './index.css'
 import { ResortContext } from './context/ResortContext.js'
+import { siteOccasionClass } from './utils/occasionThemes'
 
 function PublicLayout() {
   const { siteData, siteDataError, retrySiteData } = useContext(ResortContext)
+  const occasionTheme = siteData?.theme?.occasionTheme || 'default'
+  const occasionClass = siteOccasionClass(occasionTheme)
 
   return (
-    <div className="min-h-screen bg-[var(--site-bg,#faf8f1)] text-[var(--site-text,#1b2b22)]">
+    <div className={`min-h-screen bg-[var(--site-bg,#faf8f1)] text-[var(--site-text,#1b2b22)] ${occasionClass}`}>
+      {occasionTheme === 'christmas' && <div className="site-snowfall" aria-hidden="true" />}
       <Navbar />
       <WelcomePopup />
       {siteDataError && (

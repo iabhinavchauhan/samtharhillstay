@@ -7,7 +7,7 @@ import { resolveImage, responsiveUnsplashImage, responsiveUnsplashSrcSet } from 
 import { homestays as defaultHomestays } from '../data/resortData'
 import HomestayImage from '../components/HomestayImage'
 import GalleryLightbox from '../components/GalleryLightbox'
-import { occasionThemeClass } from '../utils/occasionThemes'
+import { occasionThemeClass, siteOccasionClass } from '../utils/occasionThemes'
 import { Car, MapPin, Mountain, HeartHandshake, Route, Leaf, Users, PawPrint, Droplets } from 'lucide-react'
 
 function compressReviewPhoto(file) {
@@ -104,7 +104,44 @@ export default function Home() {
     images: [
       'https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=2200&q=85',
       'https://images.unsplash.com/photo-1763480005970-2eb7653864ce?auto=format&fit=crop&w=2200&q=85',
-    ]
+    ],
+    christmasImages: [
+      'https://images.unsplash.com/photo-1612081205670-9391c682a2b7?auto=format&fit=crop&w=2200&q=85',
+      'https://images.unsplash.com/photo-1584454504448-7c2d41e4b080?auto=format&fit=crop&w=2200&q=85',
+      'https://images.unsplash.com/photo-1587786787803-4d20e8e9e8a2?auto=format&fit=crop&w=2200&q=85',
+    ],
+    newYearImages: [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85',
+      'https://images.unsplash.com/photo-1526552588-8b30a4b5c4d5?auto=format&fit=crop&w=2200&q=85',
+    ],
+    holiImages: [
+      'https://images.unsplash.com/photo-1609592806709-7d4f56294c7a?auto=format&fit=crop&w=2200&q=85',
+      'https://images.unsplash.com/photo-1606949033319-5e04c3c556b9?auto=format&fit=crop&w=2200&q=85',
+    ],
+    diwaliImages: [
+      'https://images.unsplash.com/photo-1643097299443-d6f34b289d6f?auto=format&fit=crop&w=2200&q=85',
+      'https://images.unsplash.com/photo-1643097301103-6f3e1e4b4f0e?auto=format&fit=crop&w=2200&q=85',
+    ],
+    christmasContent: {
+      tagline: 'Christmas in the Hills · Magical Mountain Celebration',
+      title: 'Celebrate Christmas in the Quiet Himalayas',
+      subtitle: 'Wake to snow-dusted pines, warm fireplaces, and carols drifting through the valley. A festive hill stay like no other.',
+    },
+    newYearContent: {
+      tagline: 'New Year in the Hills · Fresh Beginnings at Altitude',
+      title: 'Welcome the New Year Above the Clouds',
+      subtitle: 'Toast to new beginnings with Kanchenjunga as your backdrop. Cozy fires, star-lit nights, and mountain magic.',
+    },
+    holiContent: {
+      tagline: 'Holi in the Hills · Colors Meet the Clouds',
+      title: 'Play Holi Where the Mountains Bloom',
+      subtitle: 'Splash colors against pine forests and valley views. A vibrant celebration in the lap of the Himalayas.',
+    },
+    diwaliContent: {
+      tagline: 'Diwali in the Hills · Lights Above the Valley',
+      title: 'Celebrate the Festival of Lights in the Mountains',
+      subtitle: 'Diyas glowing on hill slopes, lanterns in pine forests, and the warmth of home-cooked feasts.',
+    },
   }
   const hero = { ...defaultHero, ...(hp.hero || {}) }
 
@@ -185,7 +222,44 @@ export default function Home() {
 
   const stays = homestays.length ? homestays : defaultHomestays
 
-  const heroImages = useMemo(() => hero.images?.length > 0 ? hero.images : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=1600&q=75'], [hero.images])
+  const occasionTheme = siteData?.theme?.occasionTheme || hero.theme || 'default'
+  const getOccasionImages = () => {
+    switch (occasionTheme) {
+      case 'christmas':
+        return hero.christmasImages || defaultHero.christmasImages
+      case 'new-year':
+        return hero.newYearImages || defaultHero.newYearImages
+      case 'holi':
+        return hero.holiImages || defaultHero.holiImages
+      case 'diwali':
+        return hero.diwaliImages || defaultHero.diwaliImages
+      default:
+        return hero.images || defaultHero.images
+    }
+  }
+
+  const getOccasionContent = () => {
+    switch (occasionTheme) {
+      case 'christmas':
+        return hero.christmasContent || defaultHero.christmasContent
+      case 'new-year':
+        return hero.newYearContent || defaultHero.newYearContent
+      case 'holi':
+        return hero.holiContent || defaultHero.holiContent
+      case 'diwali':
+        return hero.diwaliContent || defaultHero.diwaliContent
+      default:
+        return { tagline: hero.tagline, title: hero.title, subtitle: hero.subtitle }
+    }
+  }
+
+  const occasionImages = useMemo(() => getOccasionImages(), [occasionTheme, hero.christmasImages, hero.newYearImages, hero.holiImages, hero.diwaliImages, hero.images])
+  const heroImages = useMemo(() => occasionImages?.length > 0 ? occasionImages : ['https://images.unsplash.com/photo-1615751440098-f4ae06aa209e?auto=format&fit=crop&w=1600&q=75'], [occasionImages])
+
+  const occasionContent = useMemo(() => getOccasionContent(), [occasionTheme, hero.christmasContent, hero.newYearContent, hero.holiContent, hero.diwaliContent, hero.tagline, hero.title, hero.subtitle])
+  const heroTagline = occasionContent?.tagline || hero.tagline
+  const heroTitle = occasionContent?.title || hero.title
+  const heroSubtitle = occasionContent?.subtitle || hero.subtitle
 
   const [heroImageIndex, setHeroImageIndex] = useState(0)
   const currentHeroImage = heroImages[heroImageIndex] || heroImages[0]
@@ -333,10 +407,10 @@ export default function Home() {
   )
 
   return (
-    <div className="overflow-hidden bg-[var(--site-bg,#faf8f1)] text-[var(--site-text,#1b2b22)]">
+    <div className={`overflow-hidden bg-[var(--site-bg,#faf8f1)] text-[var(--site-text,#1b2b22)] ${siteOccasionClass(occasionTheme)}`}>
       {/* 1. HERO SECTION */}
       {hero.visible !== false && (
-        <section id="home" className={`home-hero relative isolate flex items-end bg-[#10281e] ${occasionThemeClass(hero.theme)}`}>
+        <section id="home" className={`home-hero relative isolate flex items-end bg-[#10281e] ${occasionThemeClass(hero.theme && hero.theme !== 'default' ? hero.theme : siteData?.theme?.occasionTheme)}`}>
           <img
             key={heroImageIndex}
             src={responsiveUnsplashImage(resolvedHeroImage)}
@@ -349,24 +423,24 @@ export default function Home() {
             className="hero-background-image pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
           />
           <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#10281e]/85 via-[#10281e]/30 to-[#10281e]/10" aria-hidden="true" />
-          {hero.theme && hero.theme !== 'default' && <div className="occasion-decoration" aria-hidden="true" />}
+          {occasionTheme !== 'default' && <div className="occasion-decoration" aria-hidden="true" />}
           <div className="home-shell hero-inner relative z-10 flex w-full flex-col justify-end pb-12 pt-28 text-white sm:pb-16 lg:pb-24">
             <div className="max-w-[760px] animate-[rise-in_.8s_ease_both]">
-              {hero.tagline && (
+              {heroTagline && (
                 <p className="mb-4 inline-block rounded-full border border-white/35 bg-[#faf8f1]/90 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-[#10281e] shadow-lg sm:text-xs">
-                  {hero.tagline}
+                  {heroTagline}
                 </p>
               )}
               <h1 className="display-font max-w-[700px] text-[40px] font-semibold leading-[1.04] text-[#fffdf6] sm:text-6xl lg:text-[70px]">
-                {hero.title}
+                {heroTitle}
               </h1>
               <p className="mt-5 max-w-[540px] text-sm leading-6 text-white/80 sm:text-base sm:leading-7">
-                {hero.subtitle}
+                {heroSubtitle}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <a
                   href="/#contact"
-                  className="hero-primary-button rounded-full bg-[var(--accent-gold,#caa34b)] px-6 py-3 text-xs font-bold text-[#16281e] transition hover:bg-[var(--accent-gold-hover,#dfbc60)] shadow-lg"
+                  className="hero-primary-button rounded-full bg-[#D8B85E] px-6 py-3 text-xs font-bold text-[#16281e] transition hover:bg-[#c9a94f] shadow-lg"
                 >
                   {hero.primaryButtonText || 'Book Your Stay'} <span aria-hidden="true">→</span>
                 </a>
@@ -380,6 +454,16 @@ export default function Home() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Site-wide Discount Banner */}
+      {discount.enabled && discount.percent > 0 && (
+        <div className="bg-gradient-to-r from-[#caa34b] to-[#d8b85e] px-4 py-3">
+          <div className="max-w-[1240px] mx-auto flex items-center justify-center gap-2 text-white text-sm font-bold">
+            <span aria-hidden="true">🎉</span>
+            <span>Limited Time Offer: <span className="font-extrabold">{discount.percent}% OFF</span> on all homestays! Use code <span className="underline">HILLSTAY{discount.percent}</span> at booking.</span>
+          </div>
+        </div>
       )}
 
       {/* 2. HOMESTAYS SECTION */}
@@ -396,6 +480,12 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
+            {discount.enabled && discount.percent > 0 && (
+              <div className="bg-[#caa34b] text-[#10281e] rounded-2xl px-5 py-3.5 text-center text-sm font-bold flex items-center justify-center gap-2 border border-[#caa34b]">
+                <span aria-hidden="true">🎉</span>
+                <span>Limited Time Offer: <span className="font-extrabold">{discount.percent}% OFF</span> on all homestays!</span>
+              </div>
+            )}
             {stays.map((stay, index) => (
               <article key={stay.slug || stay.name || index} className="stay-card group">
                 <div className="stay-visual">
@@ -416,9 +506,16 @@ export default function Home() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs uppercase tracking-widest text-[#caa34b] font-bold">{stay.location}</p>
                       {stay.priceStarting && (
-                        <span className="rounded-full bg-[#10281e]/10 px-3 py-1 text-xs font-bold text-[#10281e]">
-                          From {formatPrice(applyDiscount(stay.priceStarting, discount))} {stay.priceLabel || 'per night'}
-                        </span>
+                        <>
+                          {discount.enabled && discount.percent > 0 && (
+                            <span className="rounded-full bg-[#caa34b] px-2.5 py-1 text-[10px] font-extrabold text-[#10281e]">
+                              {discount.percent}% OFF
+                            </span>
+                          )}
+                          <span className="rounded-full bg-[#10281e]/10 px-3 py-1 text-xs font-bold text-[#10281e]">
+                            From {formatPrice(applyDiscount(stay.priceStarting, discount))} {stay.priceLabel || 'per night'}
+                          </span>
+                        </>
                       )}
                     </div>
                     <h3 className="display-font mt-2 text-2xl font-bold text-[#10281e]">{stay.name}</h3>
@@ -533,8 +630,8 @@ export default function Home() {
 
       {/* 5. EXPLORE & DAY TRIPS */}
       {destinationsData.visible !== false && (
-        <section id="explore" className={`explore-section border-t border-[#e9e3d7] bg-[#f5f2e8] py-16 sm:py-20 ${occasionThemeClass(destinationsData.theme)}`}>
-          {destinationsData.theme && destinationsData.theme !== 'default' && <div className="explore-decoration" aria-hidden="true" />}
+        <section id="explore" className={`explore-section border-t border-[#e9e3d7] bg-[#f5f2e8] py-16 sm:py-20 ${occasionThemeClass(occasionTheme)}`}>
+          {occasionTheme !== 'default' && <div className="explore-decoration" aria-hidden="true" />}
           <div className="home-shell explore-content">
             <div className="mb-8 max-w-2xl">
               <p className="section-kicker">Day trips & surrounding trails</p>
@@ -624,64 +721,28 @@ export default function Home() {
 
       {/* 6. ATTRACTION CLUSTERS */}
       {clustersData.visible !== false && (
-        <section className="home-shell attractions-section py-9 sm:py-12" style={{ backgroundColor: clustersData.backgroundColor || 'var(--paper)' }}>
-          <div className="mb-4 max-w-2xl">
-            <p className="section-kicker" style={{ color: clustersData.accentColor || 'var(--gold)' }}>Regional Highlights</p>
-            <h2 className="section-title attractions-heading mt-2" style={{ color: clustersData.headingColor || 'var(--pine)' }}>Attraction Clusters Across Kalimpong & Sikkim</h2>
-          </div>
-          <div className="attraction-grid">
-            {(clustersData.clusters || []).map((cluster, index) => (
-              <article key={cluster.title || index} className="attraction-card" style={{ backgroundColor: clustersData.cardBackgroundColor || 'var(--paper)', borderColor: clustersData.cardBorderColor || 'var(--line)' }}>
-                <div className="flex items-center gap-2.5">
-                  <span className="display-font grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#e5dbc0] bg-[#f5f0e1] text-[10px] font-bold text-[#9b782d]" style={{ backgroundColor: clustersData.numberBackgroundColor || '#f5f0e1', borderColor: clustersData.numberBorderColor || '#e5dbc0', color: clustersData.accentColor || 'var(--gold)' }}>
-                    0{index + 1}
-                  </span>
-                  <h3 className="text-[13px] font-bold leading-5 text-[#1b3527]" style={{ color: clustersData.cardHeadingColor || 'var(--pine)' }}>{cluster.title}</h3>
-                </div>
-                <ul className="attraction-list">
-                  {(cluster.spots || []).map((place) => (
-                    <li key={place} className="attraction-place" style={{ backgroundColor: clustersData.tagBackgroundColor || '#f4efdf', borderColor: clustersData.tagBorderColor || 'var(--line)', color: clustersData.tagTextColor || 'var(--pine-soft)' }}>{place}</li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 7. GALLERY SECTION */}
-      {galleryData.visible !== false && (
-        <section id="gallery" className="border-t border-[#e9e3d7] bg-white py-16 sm:py-20">
+        <section className="journey-section">
           <div className="home-shell">
-            <div className="mb-8">
-              <p className="section-kicker">{galleryData.subheading || 'A glimpse of hill life'}</p>
-              <h2 className="section-title mt-2">{galleryData.heading || 'Moments from the Hills'}</h2>
+            <div className="mb-8 max-w-3xl">
+              <p className="section-kicker">Regional Highlights</p>
+              <h2 className="section-title mt-3">Attraction Clusters Across Kalimpong & Sikkim</h2>
+              <span className="mt-4 block h-[3px] w-16 rounded-full bg-[#caa34b]" />
             </div>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {(galleryData.items || []).map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveStayImage({ name: item.title, image: item.image })}
-                  className="group flex min-h-56 w-full flex-col items-center gap-4 rounded-[28px] border border-[#e5dfd1] bg-[#fffdf8] p-5 text-center shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:gap-6 sm:p-7 sm:text-left"
-                >
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-20 w-20 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
-                  />
-                  <div className="min-w-0">
-                    <span className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-full border border-[#e1d5b3] bg-[#f7f2e5] text-xs font-bold tracking-wide text-[#9b782d] sm:mx-0">
-                      {String(idx + 1).padStart(2, '0')}
+            <div className="attraction-grid" style={{ gap: '12px' }}>
+              {(clustersData.clusters || []).map((cluster, index) => (
+                <article key={cluster.title || index} className="attraction-card" style={{ backgroundColor: '#fffdf8', borderColor: '#e2dccf', borderWidth: '1px', borderRadius: '22px', padding: '20px', boxShadow: '0 8px 22px rgba(27, 53, 39, 0.06)' }}>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <span className="display-font grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#e2dccf] bg-[#f5f0e1] text-[10px] font-bold text-[#a17b2f]" style={{ backgroundColor: '#f5f0e1', borderColor: '#e2dccf', color: '#a17b2f' }}>
+                      0{index + 1}
                     </span>
-                    <h3 className="display-font text-xl font-semibold leading-tight text-[#173528] sm:text-2xl">{item.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-[#73766d]">
-                      {item.description || (item.type ? `${item.type} moments from our hillside stays.` : 'A glimpse of life in the hills.')}
-                    </p>
+                    <h3 className="text-[13px] font-bold leading-5" style={{ color: '#173528' }}>{cluster.title}</h3>
                   </div>
-                </button>
+                  <ul className="attraction-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
+                    {(cluster.spots || []).map((place) => (
+                      <li key={place} className="attraction-place" style={{ backgroundColor: '#fbf4e2', borderColor: '#e8c16c', color: '#173528', borderWidth: '1px', borderStyle: 'solid', borderRadius: '999px', padding: '4px 9px', fontSize: '10px', lineHeight: '1.3', minHeight: '26px', display: 'inline-flex', alignItems: 'center' }}>{place}</li>
+                    ))}
+                  </ul>
+                </article>
               ))}
             </div>
           </div>
@@ -689,7 +750,7 @@ export default function Home() {
       )}
 
       {/* 8. WHY CHOOSE SAMTHAR HILLSTAY */}
-      <section className="border-t border-[#e9e3d7] bg-[#f7f6f0] py-16 sm:py-20">
+      <section id="why-choose" className="border-t border-[#e9e3d7] bg-[#f7f6f0] py-16 sm:py-20">
         <div className="home-shell">
           <div className="text-center">
             <h2 className="section-title">Why Choose Samthar Hillstay</h2>
@@ -749,6 +810,45 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* 7. GALLERY SECTION */}
+      {galleryData.visible !== false && (
+        <section id="gallery" className="border-t border-[#e9e3d7] bg-white py-16 sm:py-20">
+          <div className="home-shell">
+            <div className="mb-8">
+              <p className="section-kicker">{galleryData.subheading || 'A glimpse of hill life'}</p>
+              <h2 className="section-title mt-2">{galleryData.heading || 'Moments from the Hills'}</h2>
+            </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {(galleryData.items || []).map((item, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveStayImage({ name: item.title, image: item.image })}
+                  className="group flex min-h-56 w-full flex-col items-center gap-4 rounded-[28px] border border-[#e5dfd1] bg-[#fffdf8] p-5 text-center shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:gap-6 sm:p-7 sm:text-left"
+                >
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-20 w-20 shrink-0 rounded-full border-[4px] border-[#c5a453] object-cover shadow-md transition duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
+                  />
+                  <div className="min-w-0">
+                    <span className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-full border border-[#e1d5b3] bg-[#f7f2e5] text-xs font-bold tracking-wide text-[#9b782d] sm:mx-0">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <h3 className="display-font text-xl font-semibold leading-tight text-[#173528] sm:text-2xl">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[#73766d]">
+                      {item.description || (item.type ? `${item.type} moments from our hillside stays.` : 'A glimpse of life in the hills.')}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 9. REVIEWS & TESTIMONIALS */}
       {reviewsSection.visible !== false && <section className="bg-[#10281e] text-white py-12 sm:py-16">

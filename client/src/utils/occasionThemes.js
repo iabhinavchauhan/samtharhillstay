@@ -10,3 +10,8 @@ export function occasionThemeClass(theme) {
   const supportedTheme = occasionThemes.some((item) => item.value === theme) ? theme : 'default'
   return supportedTheme === 'default' ? '' : `occasion-theme--${supportedTheme}`
 }
+
+export function siteOccasionClass(theme) {
+  const supportedTheme = occasionThemes.some((item) => item.value === theme) ? theme : 'default'
+  return supportedTheme === 'default' ? '' : `site-occasion--${supportedTheme}`
+}
