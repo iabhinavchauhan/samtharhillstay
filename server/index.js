@@ -1006,10 +1006,22 @@ app.get('/api/admin/bookings', authenticateToken, requireAdminRole, async (req, 
     const payments = await Payment.find().lean();
     const paymentByRef = new Map((Array.isArray(payments) ? payments : []).map((p) => [p.booking_ref, p]));
 
+    // Fallback images: use the homestay's main image from the live site content
+    // when a booking has no room image of its own.
+    const pubDoc = await SiteContent.findOne({ id: 'published' }).lean();
+    const siteData = pubDoc?.data || getDefaultSiteData();
+    const stays = Array.isArray(siteData.homestays) ? siteData.homestays : [];
+    const imageBySlug = new Map(stays.map((s) => [s.slug, s.mainImage || s.image]).filter(([, v]) => v));
+    const imageByName = new Map(stays.map((s) => [(s.name || '').trim().toLowerCase(), s.mainImage || s.image]).filter(([, v]) => v));
+
     const formatted = (Array.isArray(bookings) ? bookings : []).map((b) => {
       const pay = paymentByRef.get(b.booking_ref) || null;
+      const fallbackImage = imageBySlug.get(b.stay_slug)
+        || imageByName.get((b.stay_name || '').trim().toLowerCase())
+        || '';
       return {
         ...toPlain(b),
+        image: b.image || fallbackImage,
         id: b._id,
         payment: pay ? {
           transaction_id: pay.transaction_id,
@@ -1044,6 +1056,26 @@ app.patch('/api/admin/bookings/:id/status', authenticateToken, requireAdminRole,
   } catch (err) {
     console.error('[Error] Updating booking status:', err);
     res.status(500).json({ error: 'Failed to update booking status.' });
+  }
+});
+
+app.delete('/api/admin/bookings/:id', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+
+    await Booking.findByIdAndDelete(req.params.id);
+
+    // Remove the linked payment transaction record so no orphan data remains.
+    const linkedPayments = await Payment.find({ booking_ref: booking.booking_ref }).lean();
+    for (const pay of (Array.isArray(linkedPayments) ? linkedPayments : [])) {
+      await Payment.findByIdAndDelete(pay._id);
+    }
+
+    res.json({ success: true, message: 'Booking deleted.' });
+  } catch (err) {
+    console.error('[Error] Deleting booking:', err);
+    res.status(500).json({ error: 'Failed to delete booking.' });
   }
 });
 

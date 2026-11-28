@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
-import { CalendarCheck, RefreshCw, User, Mail, Phone, MapPin, CreditCard, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useCallback, useContext, useEffect, useState } from 'react';
+import { CalendarCheck, RefreshCw, User, Mail, Phone, MapPin, CreditCard, CheckCircle, Clock, XCircle, Trash2 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
+import { resolveImage } from '../utils/resolveImage';
 import { useAuth } from './AuthContext.js';
 import { CURRENCY_SYMBOL } from '../utils/currency';
+import { ResortContext } from '../context/ResortContext.js';
+
+const THUMB_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="100%" height="100%" fill="#0a1711"/><text x="50%" y="50%" fill="#caa34b" font-family="sans-serif" font-size="12" text-anchor="middle" dominant-baseline="middle">No image</text></svg>'
+);
+
+function handleThumbError(event) {
+  const img = event.currentTarget;
+  if (img.dataset.fallbackApplied === 'true') return;
+  img.dataset.fallbackApplied = 'true';
+  img.src = THUMB_PLACEHOLDER;
+}
 
 const STATUS_STYLES = {
   confirmed: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
@@ -30,7 +43,19 @@ function formatMoney(amount, currency = 'INR') {
 
 export default function BookingsManager() {
   const { token } = useAuth();
+  const { homestays = [] } = useContext(ResortContext);
   const [bookings, setBookings] = useState([]);
+
+  // Prefer the homestay's current main image (what the website shows). The image
+  // stored on the booking can be a stale /uploads path that no longer exists.
+  const stayImageFor = (booking) => {
+    const bySlug = homestays.find((h) => h.slug && h.slug === booking.stay_slug);
+    if (bySlug?.mainImage || bySlug?.image) return bySlug.mainImage || bySlug.image;
+    const name = (booking.stay_name || '').trim().toLowerCase();
+    const byName = homestays.find((h) => (h.name || '').trim().toLowerCase() === name);
+    if (byName?.mainImage || byName?.image) return byName.mainImage || byName.image;
+    return booking.image || '';
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState('');
@@ -69,6 +94,24 @@ export default function BookingsManager() {
       setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
     } catch (err) {
       setError(err.message || 'Failed to update status.');
+    } finally {
+      setUpdatingId('');
+    }
+  };
+
+  const deleteBooking = async (id, ref) => {
+    if (!window.confirm(`Delete booking ${ref || ''}? This permanently removes the booking and its payment record.`)) return;
+    try {
+      setUpdatingId(id);
+      const res = await apiFetch(`/api/admin/bookings/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete booking.');
+      setBookings((prev) => prev.filter((b) => b.id !== id));
+    } catch (err) {
+      setError(err.message || 'Failed to delete booking.');
     } finally {
       setUpdatingId('');
     }
@@ -126,12 +169,13 @@ export default function BookingsManager() {
         <div className="space-y-4">
           {paidBookings.map((b) => {
             const paid = b.payment_status === 'paid';
+            const imgSrc = stayImageFor(b);
             return (
               <div key={b.id} className="rounded-2xl border border-white/10 bg-[#0a1711] overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/10 p-4 bg-[#10281e]/60">
                   <div className="flex items-center gap-3 min-w-0">
-                    {b.image ? (
-                      <img src={b.image} alt={b.stay_name} className="h-14 w-20 shrink-0 rounded-lg object-cover border border-white/15" />
+                    {imgSrc ? (
+                      <img src={resolveImage(imgSrc, `${b.booking_ref}-img`)} alt={b.stay_name} loading="lazy" decoding="async" onError={handleThumbError} className="h-14 w-20 shrink-0 rounded-lg object-cover border border-white/15" />
                     ) : (
                       <div className="h-14 w-20 shrink-0 rounded-lg bg-black/40 border border-white/10" />
                     )}
@@ -178,6 +222,14 @@ export default function BookingsManager() {
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
+                  <button
+                    type="button"
+                    onClick={() => deleteBooking(b.id, b.booking_ref)}
+                    disabled={updatingId === b.id}
+                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/25 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />Delete
+                  </button>
                 </div>
               </div>
             );
