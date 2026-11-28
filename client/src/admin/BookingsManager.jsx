@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
-import { CalendarCheck, RefreshCw, User, Mail, Phone, MapPin, CreditCard, CheckCircle, Clock, XCircle, Trash2 } from 'lucide-react';
+import { CalendarCheck, RefreshCw, User, Mail, Phone, MapPin, CreditCard, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { resolveImage } from '../utils/resolveImage';
 import { useAuth } from './AuthContext.js';
@@ -94,24 +94,6 @@ export default function BookingsManager() {
       setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
     } catch (err) {
       setError(err.message || 'Failed to update status.');
-    } finally {
-      setUpdatingId('');
-    }
-  };
-
-  const deleteBooking = async (id, ref) => {
-    if (!window.confirm(`Delete booking ${ref || ''}? This permanently removes the booking and its payment record.`)) return;
-    try {
-      setUpdatingId(id);
-      const res = await apiFetch(`/api/admin/bookings/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete booking.');
-      setBookings((prev) => prev.filter((b) => b.id !== id));
-    } catch (err) {
-      setError(err.message || 'Failed to delete booking.');
     } finally {
       setUpdatingId('');
     }
@@ -222,14 +204,6 @@ export default function BookingsManager() {
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => deleteBooking(b.id, b.booking_ref)}
-                    disabled={updatingId === b.id}
-                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/25 disabled:opacity-50"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />Delete
-                  </button>
                 </div>
               </div>
             );
