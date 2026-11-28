@@ -7,7 +7,8 @@ import {
   MoveUp,
   MoveDown,
   Sparkles,
-  Layers
+  Layers,
+  Mail
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
 import { occasionThemes } from '../utils/occasionThemes'
@@ -16,6 +17,24 @@ import { ResortContext } from '../context/ResortContext.js'
 import { homestays as defaultHomestays } from '../data/resortData'
 
 const heroOccasionThemes = occasionThemes.filter((theme) => ['default', 'christmas'].includes(theme.value))
+
+// Mirrors ResortContext.reconcileHomestays so the editor shows exactly the stays
+// rendered on the live homepage (saved stays merged over the built-in defaults).
+function reconcileHomestays(savedHomestays = []) {
+  const matchedSavedIndexes = new Set()
+  const completedDefaults = defaultHomestays.map((defaultStay) => {
+    const defaultName = (defaultStay.name || '').trim().toLowerCase()
+    const savedIndex = savedHomestays.findIndex((stay, index) => (
+      !matchedSavedIndexes.has(index) &&
+      ((stay.slug && stay.slug === defaultStay.slug) || (stay.name || '').trim().toLowerCase() === defaultName)
+    ))
+    if (savedIndex === -1) return defaultStay
+    matchedSavedIndexes.add(savedIndex)
+    const savedStay = savedHomestays[savedIndex]
+    return { ...defaultStay, ...savedStay, contact: { ...defaultStay.contact, ...savedStay.contact } }
+  })
+  return [...completedDefaults, ...savedHomestays.filter((_, index) => !matchedSavedIndexes.has(index))]
+}
 
 // Default welcome popup values (matching server/db.js defaults)
 const defaultWelcomePopup = {
@@ -46,6 +65,50 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
 
   const homepage = content.homepage || {};
   const welcomePopup = homepage.welcomePopup || defaultWelcomePopup
+  const homepageStays = reconcileHomestays(content.homestays || [])
+
+  const persistHomestays = (stays) => onChange({ ...content, homestays: stays, homestayDefaultsReconciled: true })
+
+  const addHomestay = () => {
+    const newStay = {
+      slug: `homestay-${Date.now()}`,
+      name: 'New Hillside Stay',
+      location: 'Kalimpong Hills, West Bengal',
+      tagline: 'A quiet mountain sanctuary surrounded by nature and bird songs.',
+      description: 'Handcrafted rooms, local organic farm meals, and cozy verandas.',
+      detail: 'Perfect for long peaceful stays, remote working, and valley outlooks.',
+      mainImage: '',
+      gallery: [],
+      points: ['Mountain valley views', 'Bonfire and BBQ', 'Warm host family'],
+      amenities: ['Wi-Fi', 'Balcony', 'Breakfast Included'],
+      attractions: ['Pine trails', 'Viewpoint'],
+      priceStarting: 100,
+      currency: 'INR',
+      priceLabel: 'per night',
+      badge: 'New Stay',
+      rooms: [{ name: 'Valley Room', description: 'Serene mountain views with pine wood interior.', price: 100 }],
+      contact: { phone: '+91 98765 43210', email: 'stay@newhomestay.com', whatsapp: '+91 98765 43210', address: 'Location, State' }
+    }
+    persistHomestays([...homepageStays, newStay])
+  }
+
+  const removeHomestay = (idx) => {
+    if (homepageStays.length <= 1) {
+      alert('You must keep at least one homestay on the website.')
+      return
+    }
+    if (!window.confirm(`Remove ${homepageStays[idx].name || 'this homestay'}?`)) return
+    persistHomestays(homepageStays.filter((_, i) => i !== idx))
+  }
+
+  const moveHomestay = (idx, dir) => {
+    const targetIdx = idx + dir
+    if (targetIdx < 0 || targetIdx >= homepageStays.length) return
+    const next = [...homepageStays]
+    const [moved] = next.splice(idx, 1)
+    next.splice(targetIdx, 0, moved)
+    persistHomestays(next)
+  }
 
   const openImagePicker = (callback) => {
     setImageTargetCallback(() => callback);
@@ -889,7 +952,12 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
             <label className="flex items-center gap-2 text-xs text-white/80"><input type="checkbox" checked={homepage.staysSection?.visible !== false} onChange={(e) => updateHp('staysSection', 'visible', e.target.checked)} className="accent-[#caa34b]" />Visible</label>
           </div>
           <div className="rounded-xl border border-white/10 bg-[#0a1711] p-4">
-            <p className="mb-3 text-xs font-bold text-white/80">Currently shown stays ({homepageStays.length})</p>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold text-white/80">Currently shown stays ({homepageStays.length})</p>
+              <button type="button" onClick={addHomestay} className="inline-flex items-center gap-1.5 rounded-lg bg-[#caa34b] px-3 py-1.5 text-[11px] font-bold text-[#10281e] transition hover:bg-[#d8b85e]">
+                <Plus className="h-3.5 w-3.5" />Add Stay
+              </button>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {homepageStays.map((stay, idx) => (
                 <div key={stay.slug || stay.name || idx} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#10281e] p-3">
@@ -921,6 +989,17 @@ export default function HomepageEditor({ content, onChange, onNavigate }) {
                       className="mt-2 rounded-lg bg-[#caa34b] px-2.5 py-1 text-[11px] font-bold text-[#10281e] transition hover:bg-[#d8b85e]"
                     >
                       Change Main Image
+                    </button>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    <button type="button" onClick={() => moveHomestay(idx, -1)} disabled={idx === 0} aria-label={`Move ${stay.name} up`} className="rounded p-1 text-white/70 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
+                      <MoveUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button" onClick={() => moveHomestay(idx, 1)} disabled={idx === homepageStays.length - 1} aria-label={`Move ${stay.name} down`} className="rounded p-1 text-white/70 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
+                      <MoveDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button" onClick={() => removeHomestay(idx)} aria-label={`Remove ${stay.name}`} className="rounded p-1 text-red-300 transition hover:bg-red-500/15">
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>

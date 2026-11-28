@@ -18,7 +18,9 @@ export default function Homestays() {
   const openGallery = (stay) => {
     const media = []
     if (stay.mainImage || stay.image) media.push(stay.mainImage || stay.image)
-    ;(stay.cardGallery || []).forEach((item) => media.push(item))
+    const cardMedia = stay.cardGallery || []
+    const detailMedia = stay.gallery || []
+    ;(cardMedia.length ? cardMedia : detailMedia).forEach((item) => media.push(item))
     setGallery({ open: true, title: stay.name, media })
   }
 

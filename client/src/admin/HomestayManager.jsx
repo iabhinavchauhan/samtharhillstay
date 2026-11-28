@@ -8,9 +8,6 @@ import {
   Image as ImageIcon,
   Video,
   Phone,
-  Mail,
-  MessageSquare,
-  MapPin,
   Check,
 } from 'lucide-react';
 import ImagePickerModal from './ImagePickerModal';
@@ -20,6 +17,17 @@ import { useAuth } from './AuthContext.js';
 import { getVideoEmbedUrl, normalizeGalleryMedia } from '../utils/galleryMedia';
 import { resolveImage } from '../utils/resolveImage';
 import { homestays as defaultHomestays } from '../data/resortData';
+
+const THUMB_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="100%" height="100%" fill="#0a1711"/><text x="50%" y="50%" fill="#caa34b" font-family="sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle">Preview unavailable</text></svg>'
+);
+
+function handleThumbError(event) {
+  const img = event.currentTarget;
+  if (img.dataset.fallbackApplied === 'true') return;
+  img.dataset.fallbackApplied = 'true';
+  img.src = THUMB_PLACEHOLDER;
+}
 
 function completeHomestays(savedHomestays = []) {
   const matchedSavedIndexes = new Set();
@@ -200,7 +208,7 @@ export default function HomestayManager({ content, onChange }) {
                 ) : (
                   <video src={mediaUrl} poster={media.poster ? resolveImage(media.poster, `${currentStay.slug}-poster-${mediaIndex}`) : undefined} controls playsInline preload="metadata" className="h-32 w-full object-cover sm:h-40" />
                 ) : (
-                  <img src={mediaUrl} alt={`${currentStay.name} ${field} ${mediaIndex + 1}`} loading="lazy" decoding="async" className="h-32 w-full object-cover sm:h-40" />
+                  <img src={mediaUrl} alt={`${currentStay.name} ${field} ${mediaIndex + 1}`} loading="lazy" decoding="async" onError={handleThumbError} className="h-32 w-full object-cover sm:h-40" />
                 )}
                 <div className="flex items-center justify-between gap-2 px-2.5 py-2">
                   <span className="flex min-w-0 items-center gap-1.5 truncate text-[10px] font-medium text-white/70"><span className="shrink-0 text-[#caa34b]">{media.type === 'video' ? <Video className="h-3.5 w-3.5" /> : <ImageIcon className="h-3.5 w-3.5" />}</span><span className="truncate">{media.type === 'video' ? 'Video' : 'Photo'} {mediaIndex + 1}</span></span>
@@ -598,6 +606,7 @@ export default function HomestayManager({ content, onChange }) {
                   alt={currentStay.name || 'Homestay main image'}
                   loading="lazy"
                   decoding="async"
+                  onError={handleThumbError}
                   className="w-full h-full object-cover"
                 />
               </div>

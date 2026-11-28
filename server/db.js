@@ -41,6 +41,7 @@ const mediaSchema = new mongoose.Schema({
   mimetype: { type: String },
   size: { type: Number },
   alt_text: { type: String },
+  data: { type: String },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -438,6 +439,11 @@ export const Media = {
   findById(id) {
     if (isMongoConnected) return MongoMedia.findById(id);
     const found = memory.media.find(m => m._id?.toString() === id?.toString());
+    return wrapQuery(found ? { ...found } : null);
+  },
+  findOne(query) {
+    if (isMongoConnected) return MongoMedia.findOne(query);
+    const found = memory.media.find(m => (query.filename ? m.filename === query.filename : true));
     return wrapQuery(found ? { ...found } : null);
   },
   async create(data) {

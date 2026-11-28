@@ -120,7 +120,47 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsDir));
+
+// Uploaded files are written to disk for fast local serving, but the host's
+// disk can be ephemeral (e.g. Render free tier wipes it on restart/sleep).
+// To make uploads permanent we also persist the bytes in MongoDB and serve
+// from there whenever the disk copy is missing.
+const MAX_INLINE_UPLOAD_BYTES = 15 * 1024 * 1024;
+
+function readUploadAsBase64(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return '';
+    const buffer = fs.readFileSync(filePath);
+    if (buffer.length > MAX_INLINE_UPLOAD_BYTES) return '';
+    return buffer.toString('base64');
+  } catch {
+    return '';
+  }
+}
+
+app.get('/uploads/:filename', async (req, res) => {
+  const filename = path.basename(req.params.filename || '');
+  if (!filename) return res.status(404).json({ error: 'Not found.' });
+
+  const diskPath = path.join(uploadsDir, filename);
+  if (fs.existsSync(diskPath)) {
+    return res.sendFile(diskPath);
+  }
+
+  try {
+    const item = await Media.findOne({ filename }).lean();
+    if (item && item.data) {
+      const buffer = Buffer.from(item.data, 'base64');
+      res.set('Content-Type', item.mimetype || 'application/octet-stream');
+      res.set('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(buffer);
+    }
+  } catch (err) {
+    console.warn('[Uploads] Could not read media from database:', err.message);
+  }
+
+  return res.status(404).json({ error: 'Media file not found.' });
+});
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
@@ -1350,7 +1390,7 @@ app.post('/api/admin/restore-backup', authenticateToken, async (req, res) => {
 
 app.get('/api/admin/media', authenticateToken, async (req, res) => {
   try {
-    const items = await Media.find().sort({ created_at: -1 }).lean();
+    const items = await Media.find().select('-data').sort({ created_at: -1 }).lean();
     const formatted = items.map(m => ({ ...m, id: m._id }));
     res.json(formatted);
   } catch (err) {
@@ -1372,7 +1412,8 @@ app.post('/api/admin/media/upload', authenticateToken, upload.single('file'), as
       url: fileUrl,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      alt_text: altText
+      alt_text: altText,
+      data: readUploadAsBase64(path.join(uploadsDir, req.file.filename))
     });
 
     res.json({
@@ -1403,7 +1444,8 @@ app.post('/api/admin/homestay-gallery/upload', authenticateToken, homestayGaller
       url: fileUrl,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      alt_text: altText
+      alt_text: altText,
+      data: readUploadAsBase64(path.join(uploadsDir, req.file.filename))
     });
 
     res.json({

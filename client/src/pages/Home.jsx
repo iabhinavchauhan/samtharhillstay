@@ -275,7 +275,9 @@ export default function Home() {
   const openStayGallery = (stay) => {
     const media = []
     if (stay.mainImage || stay.image) media.push(stay.mainImage || stay.image)
-    ;(stay.cardGallery || []).forEach((item) => media.push(item))
+    const cardMedia = stay.cardGallery || []
+    const detailMedia = stay.gallery || []
+    ;(cardMedia.length ? cardMedia : detailMedia).forEach((item) => media.push(item))
     setStayGallery({ open: true, title: stay.name, media })
   }
   const [preferredStay, setPreferredStay] = useState('No preference')
