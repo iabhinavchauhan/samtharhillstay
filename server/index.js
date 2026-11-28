@@ -998,6 +998,56 @@ app.get('/api/payments', authenticateUser, async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// ADMIN: BOOKED HOMESTAYS (all users' bookings + payment info)
+// -------------------------------------------------------------
+app.get('/api/admin/bookings', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ created_at: -1 }).lean();
+    const payments = await Payment.find().lean();
+    const paymentByRef = new Map((Array.isArray(payments) ? payments : []).map((p) => [p.booking_ref, p]));
+
+    const formatted = (Array.isArray(bookings) ? bookings : []).map((b) => {
+      const pay = paymentByRef.get(b.booking_ref) || null;
+      return {
+        ...toPlain(b),
+        id: b._id,
+        payment: pay ? {
+          transaction_id: pay.transaction_id,
+          amount: pay.amount,
+          currency: pay.currency || b.currency || 'INR',
+          method: pay.payment_method,
+          status: pay.payment_status,
+          razorpay_order_id: pay.razorpay_order_id,
+          razorpay_payment_id: pay.razorpay_payment_id,
+          created_at: pay.created_at
+        } : null
+      };
+    });
+
+    res.json({ success: true, bookings: formatted });
+  } catch (err) {
+    console.error('[Error] Fetching all bookings:', err);
+    res.status(500).json({ error: 'Failed to load bookings.' });
+  }
+});
+
+app.patch('/api/admin/bookings/:id/status', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['pending', 'confirmed', 'completed', 'cancelled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Use one of: ${allowed.join(', ')}.` });
+    }
+    const updated = await Booking.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' });
+    if (!updated) return res.status(404).json({ error: 'Booking not found.' });
+    res.json({ success: true, booking: { ...toPlain(updated), id: updated._id } });
+  } catch (err) {
+    console.error('[Error] Updating booking status:', err);
+    res.status(500).json({ error: 'Failed to update booking status.' });
+  }
+});
+
+// -------------------------------------------------------------
 // PUBLIC ROUTES
 // -------------------------------------------------------------
 

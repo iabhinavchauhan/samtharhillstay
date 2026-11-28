@@ -19,6 +19,7 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
+  CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from './AuthContext.js';
 import AdminLogin from './AdminLogin';
@@ -33,6 +34,7 @@ import InquiriesManager from './InquiriesManager';
 import ReviewsManager from './ReviewsManager';
 import LivePreviewModal from './LivePreviewModal';
 import BlogManager from './BlogManager';
+import BookingsManager from './BookingsManager';
 
 export default function AdminDashboard() {
   const { user, token, logout, isAuthenticated, loading: authLoading } = useAuth();
@@ -151,6 +153,7 @@ export default function AdminDashboard() {
 
   const navMenuItems = [
     { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
+    { id: 'bookings', label: 'Booked Homestays', icon: CalendarCheck },
     { id: 'homepage', label: 'Homepage Sections', icon: Home },
     { id: 'homestays', label: 'Homestays & Pricing', icon: Building2 },
     { id: 'theme', label: 'Theme & Colors', icon: Palette },
@@ -297,6 +300,8 @@ export default function AdminDashboard() {
           <div className="max-w-6xl mx-auto">
             {activeTab === 'reviews' ? (
               <ReviewsManager />
+            ) : activeTab === 'bookings' ? (
+              <BookingsManager />
             ) : loadingContent ? (
               <div className="py-24 text-center text-white/40 text-sm">
                 Fetching website configurations from database...
